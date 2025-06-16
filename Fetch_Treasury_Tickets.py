@@ -41,7 +41,7 @@ def get_bearer_token():
         raise SystemExit(1)
 
 def fetch_batch(limit, offset):
-    url = "https://lendlease.service-now.com/api/now/table/sn_hr_core_case"
+    url = "https://lendlease.service-now.com/api/now/table/x_llusn_bankg_bi_req"
     headers = {
         'Authorization': f'Bearer {get_bearer_token()}',
     }
