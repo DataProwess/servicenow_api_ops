@@ -247,26 +247,52 @@ def add_html_with_images(doc, html_content):
             src = elem.get('src', '')
             import re
             sysid_match = re.search(r'sys_id=([a-zA-Z0-9]+)', src)
-            para = doc.add_paragraph()
+            placeholder_text = "[IMAGE_PLACEHOLDER:UNKNOWN]"
             if sysid_match:
                 sysid = sysid_match.group(1)
-                para.add_run(f"[IMAGE_PLACEHOLDER:{sysid}]")
+                placeholder_text = f"[IMAGE_PLACEHOLDER:{sysid}]"
+            if parent_paragraph is not None:
+                    # Insert placeholder run into existing paragraph (inside table cell)
+                    parent_paragraph.add_run(placeholder_text + " ")
             else:
-                para.add_run("[IMAGE_PLACEHOLDER:UNKNOWN]")
+                # No paragraph context, create a new one
+                para = doc.add_paragraph()
+                para.add_run(placeholder_text)
+            return parent_paragraph
+        elif elem.name == 'table':
+            add_html_table(doc, elem)
             return None
+        elif elem.name == 'a':
+            href = elem.get('href')
+            link_text = elem.get_text(strip=True)
+            if href and link_text:
+                if parent_paragraph is None:
+                    parent_paragraph = doc.add_paragraph()
+                add_hyperlink(parent_paragraph, href, link_text)
+            return parent_paragraph
 
         elif is_inline(elem):
-            # Inline element: add its text to the existing paragraph or create new one
+            # NEW: Handle strikethrough spans
+            if elem.name == 'span' and 'text-decoration: line-through' in elem.get('style', '').lower():
+                text = elem.get_text().strip()
+                if text:
+                    if parent_paragraph is None:
+                        parent_paragraph = doc.add_paragraph()
+                    run = parent_paragraph.add_run(text + ' ')
+                    run.font.strike = True
+                return parent_paragraph
+            
+            # Existing inline handling
             if parent_paragraph is None:
                 parent_paragraph = doc.add_paragraph()
-
+                
             for child in elem.children:
                 parent_paragraph = process_element(child, parent_paragraph)
-
+                
             return parent_paragraph
 
         else:
-            # Block-level element: process children each starting fresh paragraphs
+            # Block element handling
             for child in elem.children:
                 process_element(child, None)
             return None
@@ -275,6 +301,7 @@ def add_html_with_images(doc, html_content):
     top_level = soup.body.contents if soup.body else soup.contents
     for child in top_level:
         process_element(child, None)
+
 
 
 # NEW CONFLUENCE FUNCTIONS
