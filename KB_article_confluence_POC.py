@@ -16,9 +16,62 @@ import html
 from html import unescape
 from html2docx import html2docx
 import base64
+from docx.oxml import OxmlElement
+from docx.oxml.ns import qn
+from docx.shared import Pt
 
 load_dotenv()
 
+ 
+
+def add_hyperlink(paragraph, url, text, styles=None):
+    if styles is None:
+        styles = {}
+
+    part = paragraph.part
+    r_id = part.relate_to(
+        url,
+        "http://schemas.openxmlformats.org/officeDocument/2006/relationships/hyperlink",
+        is_external=True
+    )
+
+    hyperlink = OxmlElement("w:hyperlink")
+    hyperlink.set(qn("r:id"), r_id)
+
+    new_run = OxmlElement("w:r")
+    rPr = OxmlElement("w:rPr")
+
+    rStyle = OxmlElement("w:rStyle")
+    rStyle.set(qn("w:val"), "Hyperlink")
+    rPr.append(rStyle)
+
+    if styles.get("bold"):
+        b = OxmlElement("w:b")
+        rPr.append(b)
+    if styles.get("italic"):
+        i = OxmlElement("w:i")
+        rPr.append(i)
+    if styles.get("strike"):
+        strike = OxmlElement("w:strike")
+        rPr.append(strike)
+    if styles.get("underline", True):
+        u = OxmlElement("w:u")
+        u.set(qn("w:val"), "single")
+        rPr.append(u)
+    if "color" in styles:
+        color_elem = OxmlElement("w:color")
+        color_elem.set(qn("w:val"), styles["color"])
+        rPr.append(color_elem)
+
+    new_run.append(rPr)
+
+    text_elem = OxmlElement("w:t")
+    text_elem.text = text.strip()
+    new_run.append(text_elem)
+
+    hyperlink.append(new_run)
+    paragraph._p.append(hyperlink)
+    return paragraph
  
 
 def replace_img_with_confluence_macro(html_content, attachments):
@@ -223,6 +276,55 @@ def download_attachments_for_article(table_sys_id, output_dir, headers):
                 print(f"   ✗ Error downloading {file_name}: {e}")
     
     return downloaded_attachments
+
+        
+def add_html_table(doc, table_elem):
+        rows = table_elem.find_all('tr')
+        if not rows:
+            return
+        num_cols = max(len(row.find_all(['td', 'th'])) for row in rows)
+        table = doc.add_table(rows=0, cols=num_cols)
+        table.style = 'Table Grid'
+
+        def process_cell_content(cell_elem, cell):
+            # Clear any existing paragraphs in the cell (usually empty initially)
+            for para in cell.paragraphs:
+                p = para._element
+                p.getparent().remove(p)
+            # Add one new paragraph to the cell
+            para = cell.add_paragraph()
+
+            def process_element(elem, parent_paragraph):
+                from bs4 import NavigableString, Tag
+                if isinstance(elem, NavigableString):
+                    text = str(elem).strip()
+                    if text:
+                        parent_paragraph.add_run(text + ' ')
+                elif isinstance(elem, Tag):
+                    if elem.name == 'img':
+                        src = elem.get('src', '')
+                        import re
+                        sysid_match = re.search(r'sys_id=([a-zA-Z0-9]+)', src)
+                        placeholder_text = "[IMAGE_PLACEHOLDER:UNKNOWN]"
+                        if sysid_match:
+                            sysid = sysid_match.group(1)
+                            placeholder_text = f"[IMAGE_PLACEHOLDER:{sysid}]"
+                        parent_paragraph.add_run(placeholder_text + ' ')
+                    elif elem.name == 'br':
+                        parent_paragraph.add_run('\n')
+                    else:
+                        for child in elem.children:
+                            process_element(child, parent_paragraph)
+
+            for child in cell_elem.children:
+                process_element(child, para)
+
+        for row_elem in rows:
+            row_cells = row_elem.find_all(['td', 'th'])
+            row = table.add_row()
+            for i, cell_elem in enumerate(row_cells):
+                process_cell_content(cell_elem, row.cells[i])
+
 
 def add_html_with_images(doc, html_content):
     soup = BeautifulSoup(html_content, 'html.parser')
