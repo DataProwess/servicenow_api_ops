@@ -85,11 +85,11 @@ def create_bigquery_table():
     base_uri = f"gs://{bucket_name}/{main_folder}"
     for hr in hr_numbers:
         # Use HTTPS links for clickable access
-        pdfs_link = f"https://storage.cloud.google.com/{bucket_name}/{main_folder}/{hr}/PDFs/"
-        attachments_link = f"https://storage.cloud.google.com/{bucket_name}/{main_folder}/{hr}/Attachments/"
+        pdfs_link = f"https://console.cloud.google.com/storage/browser/{bucket_name}/{main_folder}/{hr}/PDFs/"
+        attachments_link = f"console.cloud.google.com/storage/browser/{bucket_name}/{main_folder}/{hr}/Attachments/"
         
         data.append({
-            "hr_number": hr,
+            "treasury_number": hr,
             "pdfs": pdfs_link,
             "attachments": attachments_link
         })
