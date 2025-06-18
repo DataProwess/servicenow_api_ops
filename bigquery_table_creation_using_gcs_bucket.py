@@ -6,11 +6,11 @@ import os
 os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = "cdhnonprodtreasury87796-fd10b79fc8d5.json"
 
 # Configuration
-bucket_name = "hr_tickets_demo"
-main_folder = "HR_Tickets_20250613_1003"
+bucket_name = "treasury_tickets_demo"
+main_folder = "Treasury_Tickets_20250613_0959"
 project_id = "cdhnonprodtreasury87796"
-dataset_id = "hr_tickets_dataset"  # Replace with your actual dataset name
-table_id = "hr_tickets_table"
+dataset_id = "treasury_tickets_dataset"  # Replace with your actual dataset name
+table_id = "treasury_tickets_table"
 
 def create_dataset_if_not_exists(bq_client):
     """Create BigQuery dataset if it doesn't exist"""
@@ -27,7 +27,8 @@ def create_dataset_if_not_exists(bq_client):
 def create_table_if_not_exists(bq_client):
     """Create BigQuery table if it doesn't exist"""
     schema = [
-        bigquery.SchemaField("hr_number", "STRING", mode="REQUIRED"),
+        bigquery.SchemaField("treasury_number", "STRING", mode="REQUIRED"),
+        # bigquery.SchemaField("hr_number", "STRING", mode="REQUIRED"),
         bigquery.SchemaField("pdfs", "STRING", mode="REQUIRED"),
         bigquery.SchemaField("attachments", "STRING", mode="REQUIRED")
     ]
@@ -51,7 +52,8 @@ def get_hr_folders():
     hr_folders = set()
     for blob in blobs:
         path_parts = blob.name.split('/')
-        if len(path_parts) > 2 and path_parts[1].startswith("HR"):
+        # if len(path_parts) > 2 and path_parts[1].startswith("HR"):
+        if len(path_parts) > 2 and path_parts[1].startswith("BIR"):    
             hr_folders.add(path_parts[1])
     return sorted(hr_folders)
 
