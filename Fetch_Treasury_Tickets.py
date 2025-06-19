@@ -99,7 +99,7 @@ def fetch_all_records(batch_size=1000, offset_increment=1001):
         batch_num += 1
  
     # Save combined file
-    combined_filename = f"all_records_combined_{timestamp}.json"
+    combined_filename = f"Treasury_records_combined_{timestamp}.json"
     combined_file = os.path.join(master_folder, combined_filename)
     with open(combined_file, "w", encoding="utf-8") as f:
         json.dump(all_results, f, indent=2)
