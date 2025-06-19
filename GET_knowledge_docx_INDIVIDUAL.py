@@ -418,7 +418,7 @@ def add_html_with_images(doc, html_content):
         process_element(child, None)
 
 
-        
+
 def add_html_table(doc, table_elem):
         rows = table_elem.find_all('tr')
         if not rows:
@@ -465,58 +465,6 @@ def add_html_table(doc, table_elem):
             row = table.add_row()
             for i, cell_elem in enumerate(row_cells):
                 process_cell_content(cell_elem, row.cells[i])
-
-
-def add_html_with_images(doc, html_content):
-    soup = BeautifulSoup(html_content, 'html.parser')
-
-    def is_inline(elem):
-        inline_tags = {'span', 'a', 'b', 'i', 'u', 'em', 'strong', 'small', 'sub', 'sup', 'mark', 'code', 'br'}
-        return elem.name in inline_tags if elem.name else False
-
-    def process_element(elem, parent_paragraph=None):
-        if isinstance(elem, NavigableString):
-            text = str(elem).strip()
-            if text:
-                if parent_paragraph is None:
-                    parent_paragraph = doc.add_paragraph()
-                parent_paragraph.add_run(text + ' ')
-            return parent_paragraph
-
-        elif elem.name == 'img':
-            # ... existing image handling code ...
-            return None
-
-        elif is_inline(elem):
-            # NEW: Handle strikethrough spans
-            if elem.name == 'span' and 'text-decoration: line-through' in elem.get('style', '').lower():
-                text = elem.get_text().strip()
-                if text:
-                    if parent_paragraph is None:
-                        parent_paragraph = doc.add_paragraph()
-                    run = parent_paragraph.add_run(text + ' ')
-                    run.font.strike = True
-                return parent_paragraph
-            
-            # Existing inline handling
-            if parent_paragraph is None:
-                parent_paragraph = doc.add_paragraph()
-                
-            for child in elem.children:
-                parent_paragraph = process_element(child, parent_paragraph)
-                
-            return parent_paragraph
-
-        else:
-            # Block element handling
-            for child in elem.children:
-                process_element(child, None)
-            return None
-
-    # Process top-level elements
-    top_level = soup.body.contents if soup.body else soup.contents
-    for child in top_level:
-        process_element(child, None)
 
 def replace_placeholders_with_images(docx_path, local_image_folder, output_path):
     doc = Document(docx_path)
