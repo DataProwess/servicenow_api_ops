@@ -1,6 +1,7 @@
 import requests
 import json
 from bs4 import BeautifulSoup, NavigableString, Tag
+from html import unescape
 from datetime import datetime
 import re
 import os
@@ -182,6 +183,73 @@ def format_kb_article_backup(article):
 
     return "\n".join(formatted)
 
+def add_html_with_images(doc, html_content):
+    soup = BeautifulSoup(html_content, 'html.parser')
+
+    def is_inline(elem):
+        # Tags usually inline in HTML
+        inline_tags = {'span', 'a', 'b', 'i', 'u', 'em', 'strong', 'small', 'sub', 'sup', 'mark', 'code', 'br'}
+        return elem.name in inline_tags if elem.name else False
+
+    def process_element(elem, parent_paragraph=None):
+        if isinstance(elem, NavigableString):
+            # Append text to the paragraph if exists, else create new
+            text = str(elem).strip()
+            if text:
+                if parent_paragraph is None:
+                    parent_paragraph = doc.add_paragraph()
+                parent_paragraph.add_run(text + ' ')
+            return parent_paragraph
+
+        elif elem.name == 'img':
+            # Add image placeholder in a new paragraph
+            src = elem.get('src', '')
+            import re
+            sysid_match = re.search(r'sys_id=([a-zA-Z0-9]+)', src)
+            placeholder_text = "[IMAGE_PLACEHOLDER:UNKNOWN]"
+            if sysid_match:
+                sysid = sysid_match.group(1)
+                placeholder_text = f"[IMAGE_PLACEHOLDER:{sysid}]"
+            if parent_paragraph is not None:
+                    # Insert placeholder run into existing paragraph (inside table cell)
+                    parent_paragraph.add_run(placeholder_text + " ")
+            else:
+                # No paragraph context, create a new one
+                para = doc.add_paragraph()
+                para.add_run(placeholder_text)
+            return parent_paragraph
+        elif elem.name == 'table':
+            add_html_table(doc, elem)
+            return None
+        elif elem.name == 'a':
+            href = elem.get('href')
+            link_text = elem.get_text(strip=True)
+            if href and link_text:
+                if parent_paragraph is None:
+                    parent_paragraph = doc.add_paragraph()
+                add_hyperlink(parent_paragraph, href, link_text)
+            return parent_paragraph
+
+        elif is_inline(elem):
+            # Inline element: add its text to the existing paragraph or create new one
+            if parent_paragraph is None:
+                parent_paragraph = doc.add_paragraph()
+
+            for child in elem.children:
+                parent_paragraph = process_element(child, parent_paragraph)
+
+            return parent_paragraph
+
+        else:
+            # Block-level element: process children each starting fresh paragraphs
+            for child in elem.children:
+                process_element(child, None)
+            return None
+
+    # Process top-level elements
+    top_level = soup.body.contents if soup.body else soup.contents
+    for child in top_level:
+        process_element(child, None)
 
 def format_kb_article_to_docx(doc, article):
     """Add a formatted knowledge base article to the Word document"""
@@ -378,136 +446,8 @@ def download_attachments_for_article(table_sys_id, output_dir, headers):
                 print(f"   ✗ Error downloading {file_name}: {e}")
 
 
-def add_html_with_images(doc, html_content):
-    soup = BeautifulSoup(html_content, 'html.parser')
-
-    def is_inline(elem):
-        # Tags usually inline in HTML
-        inline_tags = {'span', 'a', 'b', 'i', 'u', 'em', 'strong', 'small', 'sub', 'sup', 'mark', 'code', 'br'}
-        return elem.name in inline_tags if elem.name else False
-
-    def process_element(elem, parent_paragraph=None):
-        if isinstance(elem, NavigableString):
-            # Append text to the paragraph if exists, else create new
-            text = str(elem).strip()
-            if text:
-                if parent_paragraph is None:
-                    parent_paragraph = doc.add_paragraph()
-                parent_paragraph.add_run(text + ' ')
-            return parent_paragraph
-
-        elif elem.name == 'img':
-            # Add image placeholder in a new paragraph
-            src = elem.get('src', '')
-            import re
-            sysid_match = re.search(r'sys_id=([a-zA-Z0-9]+)', src)
-            placeholder_text = "[IMAGE_PLACEHOLDER:UNKNOWN]"
-            if sysid_match:
-                sysid = sysid_match.group(1)
-                placeholder_text = f"[IMAGE_PLACEHOLDER:{sysid}]"
-            if parent_paragraph is not None:
-                    # Insert placeholder run into existing paragraph (inside table cell)
-                    parent_paragraph.add_run(placeholder_text + " ")
-            else:
-                # No paragraph context, create a new one
-                para = doc.add_paragraph()
-                para.add_run(placeholder_text)
-            return parent_paragraph
-        elif elem.name == 'table':
-            add_html_table(doc, elem)
-            return None
-        elif elem.name == 'a':
-            href = elem.get('href')
-            link_text = elem.get_text(strip=True)
-            if href and link_text:
-                if parent_paragraph is None:
-                    parent_paragraph = doc.add_paragraph()
-                add_hyperlink(parent_paragraph, href, link_text)
-            return parent_paragraph
-
-        elif is_inline(elem):
-            # NEW: Handle strikethrough spans
-            if elem.name == 'span' and 'text-decoration: line-through' in elem.get('style', '').lower():
-                text = elem.get_text().strip()
-                if text:
-                    if parent_paragraph is None:
-                        parent_paragraph = doc.add_paragraph()
-                    run = parent_paragraph.add_run(text + ' ')
-                    run.font.strike = True
-                return parent_paragraph
-            
-            # Existing inline handling
-            if parent_paragraph is None:
-                parent_paragraph = doc.add_paragraph()
-                
-            for child in elem.children:
-                parent_paragraph = process_element(child, parent_paragraph)
-                
-            return parent_paragraph
-
-        else:
-            # Block element handling
-            for child in elem.children:
-                process_element(child, None)
-            return None
-
-    # Process top-level elements
-    top_level = soup.body.contents if soup.body else soup.contents
-    for child in top_level:
-        process_element(child, None)
 
 
-def add_html_with_images(doc, html_content):
-    soup = BeautifulSoup(html_content, 'html.parser')
-
-    def is_inline(elem):
-        inline_tags = {'span', 'a', 'b', 'i', 'u', 'em', 'strong', 'small', 'sub', 'sup', 'mark', 'code', 'br'}
-        return elem.name in inline_tags if elem.name else False
-
-    def process_element(elem, parent_paragraph=None):
-        if isinstance(elem, NavigableString):
-            text = str(elem).strip()
-            if text:
-                if parent_paragraph is None:
-                    parent_paragraph = doc.add_paragraph()
-                parent_paragraph.add_run(text + ' ')
-            return parent_paragraph
-
-        elif elem.name == 'img':
-            # ... existing image handling code ...
-            return None
-
-        elif is_inline(elem):
-            # NEW: Handle strikethrough spans
-            if elem.name == 'span' and 'text-decoration: line-through' in elem.get('style', '').lower():
-                text = elem.get_text().strip()
-                if text:
-                    if parent_paragraph is None:
-                        parent_paragraph = doc.add_paragraph()
-                    run = parent_paragraph.add_run(text + ' ')
-                    run.font.strike = True
-                return parent_paragraph
-            
-            # Existing inline handling
-            if parent_paragraph is None:
-                parent_paragraph = doc.add_paragraph()
-                
-            for child in elem.children:
-                parent_paragraph = process_element(child, parent_paragraph)
-                
-            return parent_paragraph
-
-        else:
-            # Block element handling
-            for child in elem.children:
-                process_element(child, None)
-            return None
-
-    # Process top-level elements
-    top_level = soup.body.contents if soup.body else soup.contents
-    for child in top_level:
-        process_element(child, None)
-        
 def add_html_table(doc, table_elem):
         rows = table_elem.find_all('tr')
         if not rows:
