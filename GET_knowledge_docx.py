@@ -1,7 +1,6 @@
 import requests
 import json
 from bs4 import BeautifulSoup, NavigableString, Tag
-from html import unescape
 from datetime import datetime
 import re
 import os
