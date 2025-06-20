@@ -1,8 +1,10 @@
 import json
 import csv
+import datetime
 
+input_file='Treasury_records_combined_20250620_071633.json'
 # Load your JSON data from response.json
-with open('Treasury_response_20250617_111435.json', 'r', encoding='utf-8') as f:
+with open(input_file, 'r', encoding='utf-8') as f:
     data = json.load(f)
 
 rows = data['result']
@@ -24,8 +26,10 @@ for row in rows:
             processed_row[key] = None
     processed_rows.append(processed_row)
 
+
+timestamp= datetime.datetime.now().strftime('%Y%m%d_%H%M%S')
 # Write quoted CSV
-with open('output.csv', 'w', encoding='utf-8', newline='') as f:
+with open(f'{input_file}_output_{timestamp}.csv', 'w', encoding='utf-8', newline='') as f:
     writer = csv.writer(f, quoting=csv.QUOTE_ALL)
     writer.writerow(headers)
     for row in processed_rows:
