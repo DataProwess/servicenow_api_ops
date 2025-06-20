@@ -10,7 +10,7 @@ bucket_name = "hr_tickets_demo"
 main_folder = "HR_Tickets_20250613_1003"
 project_id = "cdhnonprodtreasury87796"
 dataset_id = "hr_tickets_dataset"  # Replace with your actual dataset name
-table_id = "hr_tickets_table"
+table_id = "hr_tickets_table_with_pdfs_and_attachments"
 
 def create_dataset_if_not_exists(bq_client):
     """Create BigQuery dataset if it doesn't exist"""
