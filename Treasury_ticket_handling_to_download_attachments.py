@@ -71,7 +71,7 @@ def get_bearer_token():
         data = response.json()
         token_cache = {
             'value': data['access_token'],
-            'expires': time.time() + data['expires_in'] - 60  # Subtract 60s for buffer
+            'expires': time.time() + data['expires_in'] - 360  # Subtract 360s for buffer
         }
         return data['access_token']
     except requests.exceptions.RequestException as e:
