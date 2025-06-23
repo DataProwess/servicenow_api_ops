@@ -27,13 +27,16 @@ logging.basicConfig(
         logging.StreamHandler()
     ]
 )
-
-def log_error_to_file(message):
-    """Log error to file only when errors occur"""
-    error_log_file = os.path.join(log_dir, f"error_{timestamp}.log")
-    os.makedirs(os.path.dirname(error_log_file), exist_ok=True)
+def log_error_to_file(message, log_dir=log_dir, timestamp=timestamp):
+    """Log error to file only when errors occur."""
+    error_log_file = os.path.join(log_dir, f'error_{timestamp}.log')
+    os.makedirs(log_dir, exist_ok=True)
     with open(error_log_file, 'a', encoding='utf-8') as f:
-        f.write(f"{datetime.now().strftime('%Y-%m-%d %H:%M:%S')} - ERROR - {message}\n")
+        timestamp_now = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+        f.write(f"{timestamp_now} - ERROR - {message}\n")
+
+
+
 
 def get_bearer_token():
     url = "https://lendlease.service-now.com/oauth_token.do"
