@@ -83,7 +83,7 @@ def fetch_all_records(batch_size=1000, offset_increment=1001):
             break
  
         # Save each batch to a separate file
-        batch_filename = os.path.join(master_folder, f"records_batch_{batch_num}.json")
+        batch_filename = os.path.join(master_folder, f"treasury_records_batch_{batch_num}.json")
         with open(batch_filename, "w", encoding="utf-8") as f:
             json.dump(batch, f, indent=2)
         print(f"📄 Saved {batch_count} records to {batch_filename}")
