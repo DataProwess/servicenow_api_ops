@@ -178,6 +178,8 @@ cython_debug/
 *.tar.bz2
 *.tar.xz
 *.msg
+*.tif
+*.eml
 *.json
 attachment_downloads_*/
 KB_docx_files
