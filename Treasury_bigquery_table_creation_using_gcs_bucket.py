@@ -10,7 +10,7 @@ bucket_name = "treasury_tickets_demo"
 main_folder = "Treasury_Tickets_20250613_0959"
 project_id = "cdhnonprodtreasury87796"
 dataset_id = "treasury_tickets_dataset"  # Replace with your actual dataset name
-table_id = "treasury_tickets_table_with_pdfs_and_attachments"
+table_id = "treasury_gcp_table"
 
 def create_dataset_if_not_exists(bq_client):
     """Create BigQuery dataset if it doesn't exist"""
@@ -86,7 +86,7 @@ def create_bigquery_table():
     for hr in hr_numbers:
         # Use HTTPS links for clickable access
         pdfs_link = f"https://console.cloud.google.com/storage/browser/{bucket_name}/{main_folder}/{hr}/PDFs/"
-        attachments_link = f"console.cloud.google.com/storage/browser/{bucket_name}/{main_folder}/{hr}/Attachments/"
+        attachments_link = f"https://console.cloud.google.com/storage/browser/{bucket_name}/{main_folder}/{hr}/Attachments/"
         
         data.append({
             "treasury_number": hr,
