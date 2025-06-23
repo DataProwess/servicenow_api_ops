@@ -83,9 +83,9 @@ def fetch_all_records(batch_size=1000, offset_increment=1001):
             break
  
         # Save each batch to a separate file
-        batch_filename = os.path.join(master_folder, f"records_batch_{batch_num}.json")
+        batch_filename = os.path.join(master_folder, f"HR_records_batch_{batch_num}.json")
         with open(batch_filename, "w", encoding="utf-8") as f:
-            json.dump(batch, f, indent=2)
+            json.dump({"result": batch}, f, indent=2)
         print(f"📄 Saved {batch_count} records to {batch_filename}")
  
         all_results.extend(batch)
@@ -102,7 +102,7 @@ def fetch_all_records(batch_size=1000, offset_increment=1001):
     combined_filename = f"HR_records_combined_{timestamp}.json"
     combined_file = os.path.join(master_folder, combined_filename)
     with open(combined_file, "w", encoding="utf-8") as f:
-        json.dump(all_results, f, indent=2)
+        json.dump({"result": all_results}, f, indent=2)
  
     end_time = time.time()
     duration = end_time - start_time
