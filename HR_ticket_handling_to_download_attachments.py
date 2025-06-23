@@ -113,7 +113,7 @@ def download_all_attachments_and_pdfs(json_file, headers):
 
     # Create master folder with timestamp
     timestamp = datetime.now().strftime("%Y%m%d_%H%M")
-    master_folder = f"HR_Tickets_{timestamp}"
+    master_folder = f"HR_Tickets_{json_file}_{timestamp}"
     os.makedirs(master_folder, exist_ok=True)
 
     for ticket in tickets:
