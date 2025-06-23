@@ -184,6 +184,8 @@ cython_debug/
 attachment_downloads_*/
 KB_docx_files
 KB_docx_file*/
+Treasury*/
+HR*/
 
 
 # But do NOT ignore requirements.txt
