@@ -6,6 +6,7 @@ from urllib.parse import urlencode
 from dotenv import load_dotenv
 from datetime import datetime
 import logging
+import time
 
 load_dotenv()
 
@@ -37,8 +38,14 @@ def log_error_to_file(message, log_dir=log_dir, timestamp=timestamp):
 
 
 
+# Token cache to avoid repeated requests
+token_cache = {'value': None, 'expires': 0}
 
 def get_bearer_token():
+    global token_cache
+    if time.time() < token_cache['expires']:
+        return token_cache['value']
+
     url = "https://lendlease.service-now.com/oauth_token.do"
     payload_dict = {
         'grant_type': 'password',
@@ -52,11 +59,16 @@ def get_bearer_token():
 
     try:
         response = requests.post(url, data=payload, headers=headers)
-        logging.info(f"Token request status: {response.status_code}")
+        response.raise_for_status()
         data = response.json()
+        token_cache = {
+            'value': data['access_token'],
+            'expires': time.time() + data['expires_in'] - 60  # Subtract 60s for buffer
+        }
         return data['access_token']
-    except Exception as e:
-        log_error_to_file(f"Failed to get bearer token: {e}")
+    except requests.exceptions.RequestException as e:
+        logging.error(f"❌ Token request failed: {str(e)}")
+        log_error_to_file(f"❌ Token request failed: {str(e)}")
         raise
 
 def download_attachments_for_article(table_sys_id, output_dir, headers, ticket_number):
