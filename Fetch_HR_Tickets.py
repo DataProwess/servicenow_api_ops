@@ -70,7 +70,7 @@ def fetch_all_records(batch_size=1000, offset_increment=1001):
     all_results = []
  
     timestamp = datetime.datetime.now().strftime('%Y%m%d_%H%M%S')
-    master_folder = f"HR_Tickets_{timestamp}"
+    master_folder = f"HR_tickets_JSON_response_{timestamp}"
     os.makedirs(master_folder, exist_ok=True)
  
     while True:
