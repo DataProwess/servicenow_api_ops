@@ -10,7 +10,7 @@ import logging
 load_dotenv()
 
 # Setup logging
-timestamp = datetime.now().strftime("%Y%m%d_%H%M")
+timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")  # <-- Use seconds for extra uniqueness
 log_dir = f'logs_{timestamp}'
 os.makedirs(log_dir, exist_ok=True)
 
@@ -24,14 +24,14 @@ logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(levelname)s - %(message)s',
     handlers=[
-        logging.FileHandler(log_file),
+        logging.FileHandler(log_file, encoding='utf-8'),  # <-- Add encoding
         logging.StreamHandler()
     ]
 )
 
 # Create error logger
 error_logger = logging.getLogger('error_logger')
-error_handler = logging.FileHandler(error_log_file)
+error_handler = logging.FileHandler(error_log_file, encoding='utf-8')  # <-- Add encoding
 error_handler.setLevel(logging.ERROR)
 error_formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
 error_handler.setFormatter(error_formatter)
@@ -143,8 +143,7 @@ def download_all_attachments_and_pdfs(json_file, headers):
     tickets = response_data.get("result", [])
     logging.info(f"🎫 Processing {len(tickets)} ticket(s)...")
 
-    # Create master folder with timestamp
-    timestamp = datetime.now().strftime("%Y%m%d_%H%M")
+    # Create master folder with timestamp (use the same timestamp as logs)
     master_folder = f"Treasury_Tickets_attachments_and_pdfs_{json_file}_{timestamp}"
     os.makedirs(master_folder, exist_ok=True)
 
