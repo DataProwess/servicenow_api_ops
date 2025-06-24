@@ -12,7 +12,7 @@ load_dotenv()
 
 # Setup logging
 timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")  # <-- Use seconds for extra uniqueness
-log_dir = f'logs_{timestamp}'
+log_dir = f'Treasury_total_logs_{timestamp}'
 os.makedirs(log_dir, exist_ok=True)
 
 # General log file

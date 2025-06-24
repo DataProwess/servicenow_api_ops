@@ -14,7 +14,7 @@ load_dotenv()
 timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
 
 # Define log folder and files with timestamp
-log_dir = f"logs_{timestamp}"
+log_dir = f"HR_total_logs_{timestamp}"
 os.makedirs(log_dir, exist_ok=True)
 
 log_file = os.path.join(log_dir, f"general_{timestamp}.log")
