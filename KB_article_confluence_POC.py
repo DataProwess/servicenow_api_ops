@@ -434,6 +434,8 @@ def upload_attachment_to_confluence(confluence_url, username, api_token, page_id
         print(f"❌ Failed to upload attachment {file_name}: {response.status_code} - {response.text}")
         return None
 
+
+
 def create_confluence_content(article, attachments):
     """Generate Confluence storage format content from KB article JSON"""
     
@@ -532,6 +534,20 @@ def create_confluence_content(article, attachments):
         # Clean up the HTML content for Confluence
         article_content = article.get('text', '')
         article_content = replace_img_with_confluence_macro(article_content, attachments)
+        # Insert code to add video macro for each video attachment
+        for attachment in attachments:
+            if attachment['file_name'].lower().endswith(('.mp4', '.mov', '.avi', '.wmv')):
+                video_macro = f"""
+        <ac:structured-macro ac:name="multimedia">
+        <ac:parameter ac:name="name">
+            <ri:attachment ri:filename="{attachment['file_name']}"/>
+        </ac:parameter>
+        <ac:parameter ac:name="width">500</ac:parameter>
+        <ac:parameter ac:name="autostart">false</ac:parameter>
+        </ac:structured-macro>"""
+        # Insert at the end of article_content, or at a specific location if you know where
+                article_content += video_macro
+
         # Convert ServiceNow specific tags or clean up if needed
         content += article_content
     
