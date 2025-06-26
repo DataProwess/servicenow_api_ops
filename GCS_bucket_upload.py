@@ -2,7 +2,7 @@ from pathlib import Path
 from google.cloud import storage
 import os
 
-os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = "cdhnonprodtreasury87796-fd10b79fc8d5.json"
+os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = "cdhnonprodpnc44829-1296a3a1e57c.json" #"cdhnonprodtreasury87796-fd10b79fc8d5.json"
 
 def upload_directory_to_gcs(bucket_name, source_directory):
     directory = Path(source_directory)
@@ -21,5 +21,5 @@ def upload_directory_to_gcs(bucket_name, source_directory):
             print(f"Uploaded {file_path} to {blob_path}")
 
 # Example usage:
-
-upload_directory_to_gcs("treasury_tickets_demo", "Treasury_Tickets_20250613_0959")
+a=r"D:\coding\servicenow_api_ops\demo_hr_upload"
+upload_directory_to_gcs("demo_hr_bucket", a)
