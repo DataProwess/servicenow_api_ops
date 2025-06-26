@@ -78,35 +78,35 @@ def get_bearer_token():
         logging.error(f"❌ Token request failed: {str(e)}")
         log_error_to_file(f"❌ Token request failed: {str(e)}")
         raise
+
 def download_attachments_for_article(table_sys_id, output_dir, headers, ticket_number):
+    # Define the attachment list URL
     attachment_url = f"https://lendlease.service-now.com/api/now/attachment?sysparm_query=table_sys_id={table_sys_id}"
 
+    # Helper function to try downloading the attachment list
     def try_download(headers):
         try:
             response = requests.get(attachment_url, headers=headers)
             if response.status_code == 401:
                 return 'unauthorized', None
             elif response.status_code != 200:
-                logging.error(f"❌ Failed to get attachments for ticket {ticket_number} (Status: {response.status_code})")
-                log_error_to_file(f"❌ Failed to get attachments for ticket {ticket_number} (Status: {response.status_code})")
+                logging.error(f"❌ Failed to get attachments for ticket {ticket_number}, sys_id= {table_sys_id} (Status: {response.status_code})")
                 return 'failed', None
-
             data = response.json()
             attachments = data.get('result', [])
             if not attachments:
                 logging.info(f"📎 No attachments found for ticket {ticket_number}")
                 return 'empty', None
-
             logging.info(f"📎 Found {len(attachments)} attachment(s) for ticket {ticket_number}")
             return 'success', attachments
         except Exception as e:
-            log_error_to_file(f"❌ Exception getting attachments for ticket {ticket_number}: {e}")
+            logging.error(f"❌ Exception getting attachments for ticket {ticket_number}, sys_id= {table_sys_id} : {e}")
             return 'error', None
 
+    # Try to get attachment list; refresh token if unauthorized
     status, attachments = try_download(headers)
-
     if status == 'unauthorized':
-        logging.info("🔄 Refreshing token for attachment download...")
+        logging.info("🔄 Refreshing token for attachment list download...")
         headers['Authorization'] = f'Bearer {get_bearer_token()}'
         status, attachments = try_download(headers)
         if status != 'success':
@@ -115,6 +115,7 @@ def download_attachments_for_article(table_sys_id, output_dir, headers, ticket_n
     if status != 'success':
         return
 
+    # Download each attachment with token refresh on 401
     for attachment in attachments:
         file_name = attachment.get('file_name')
         sys_id = attachment.get('sys_id')
@@ -124,16 +125,23 @@ def download_attachments_for_article(table_sys_id, output_dir, headers, ticket_n
 
         if download_link and file_name:
             try:
+                # Try to download the attachment
                 file_response = requests.get(download_link, headers=headers)
+                # If token is expired, refresh and retry
+                if file_response.status_code == 401:
+                    logging.info("   🔄 Token expired during attachment download, refreshing...")
+                    headers['Authorization'] = f'Bearer {get_bearer_token()}'
+                    file_response = requests.get(download_link, headers=headers)
+                # If successful, save the file
                 if file_response.status_code == 200:
                     file_path = os.path.join(output_dir, file_name)
                     with open(file_path, 'wb') as f:
                         f.write(file_response.content)
                     logging.info(f"   ✓ Downloaded attachment '{file_name}' for ticket {ticket_number} ({file_size} bytes)")
                 else:
-                    log_error_to_file(f"   ✗ Failed to download attachment '{file_name}' for ticket {ticket_number} (Status {file_response.status_code})")
+                    logging.error(f"   ✗ Failed to download attachment '{file_name}' , sys_id= {table_sys_id} (Status {file_response.status_code})")
             except Exception as e:
-                log_error_to_file(f"   ✗ Error downloading attachment '{file_name}' for ticket {ticket_number}: {e}")
+                logging.error(f"   ✗ Error downloading '{file_name}' , sys_id= {table_sys_id} : {e}")
 
 def download_servicenow_pdf(sys_id, pdf_dir, headers, ticket_number):
     url = f"https://lendlease.service-now.com/x_llusn_bankg_bi_req.do?PDF&sys_id={sys_id}&sysparm_view=Default%20view"
@@ -154,7 +162,7 @@ def download_servicenow_pdf(sys_id, pdf_dir, headers, ticket_number):
     else:
         logging.error(f"   ✗ Failed to download PDF for ticket {ticket_number}, sys_id {sys_id}. Status: {response.status_code}")
         log_error_to_file(f"   ✗ Failed to download PDF for ticket {ticket_number}, sys_id {sys_id}. Status: {response.status_code}")
-        log_error_to_file(f"   ✗ PDF download failure details for ticket {ticket_number}: {response.text}")
+        log_error_to_file(f"   ✗ PDF download failure details for ticket {ticket_number}, sys_id= {sys_id}. : {response.text}")
 
 def download_all_attachments_and_pdfs(json_file, headers):
     with open(json_file, 'r') as f:
