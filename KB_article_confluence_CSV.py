@@ -4,6 +4,7 @@ from bs4 import BeautifulSoup, NavigableString, Tag
 from datetime import datetime
 import re
 import os
+import csv
 import argparse
 from docx import Document
 from io import BytesIO
@@ -171,6 +172,7 @@ def get_bearer_token():
         'password': os.getenv('SNOW_PASSWORD'),
         'client_id': os.getenv('SNOW_CLIENT_ID'),
         'client_secret': os.getenv('SNOW_CLIENT_SECRET')
+
     }
     payload = urlencode(payload_dict)
 
@@ -439,18 +441,14 @@ def upload_attachment_to_confluence(confluence_url, username, api_token, page_id
 def create_confluence_content(article, attachments):
     """Generate Confluence storage format content from KB article JSON"""
     
-    # Start with title
-    # content = f"<h1>{article.get('number', 'KB Article')}</h1>"
-    
     # Add metadata as a table
-    content += "<h2>Article Information</h2>"
+    content = "<h2>Article Information</h2>"
     content += "<table><tbody>"
     
     # Key metadata fields
     important_fields = [
         ("Article Number", article.get('number')),
         ("KB Category:", article.get('kb_category', {}).get('display_value') if isinstance(article.get('kb_category'), dict) else article.get('kb_category')),
-        # ("Meta description:",article.get('meta_description')),
         ("KB Knowledge base:", article.get('kb_knowledge_base', {}).get('display_value') if isinstance(article.get('kb_knowledge_base'), dict) else article.get('kb_knowledge_base')),
         ("Meta:",article.get('meta')),
     ]
@@ -561,6 +559,11 @@ def create_or_update_confluence_page(confluence_url, username, api_token, space_
             "space": {
                 "key": space_key
             },
+            "ancestors": [
+                {
+                    "id": "224385991025"  #Change the id for each folder
+                }
+            ],
             "body": {
                 "storage": {
                     "value": content,
@@ -585,11 +588,24 @@ def create_or_update_confluence_page(confluence_url, username, api_token, space_
             return None
 
 # Parse command-line arguments
-parser = argparse.ArgumentParser(description='Download and export a specific KB article from ServiceNow to DOCX and Confluence')
-parser.add_argument('article_number', type=str, help='KB article number (e.g., KB0020129)')
+parser = argparse.ArgumentParser(description='Upload ServiceNow KB articles to Confluence using a CSV.')
+parser.add_argument('csv_file_path', type=str, help='Path to CSV file with KB article numbers')
 args = parser.parse_args()
 
-article_number = args.article_number
+csv_file_path = args.csv_file_path
+if not os.path.exists(csv_file_path):
+    print(f"❌ CSV file not found: {csv_file_path}")
+    exit(1)
+
+with open(csv_file_path, 'r', newline='', encoding='utf-8') as csvfile:
+    reader = csv.reader(csvfile)
+    kb_article_numbers = [row[0].strip() for row in reader if row and row[0].strip().startswith('KB')]
+
+if not kb_article_numbers:
+    print("❌ No valid KB article numbers found in CSV.")
+    exit(1)
+
+print(f"✅ Found {len(kb_article_numbers)} KB articles to process.")
 
 # Get Confluence parameters from environment variables
 confluence_url = os.getenv('CONFLUENCE_URL')
@@ -598,11 +614,9 @@ confluence_token = os.getenv('CONFLUENCE_TOKEN')
 confluence_space = os.getenv('CONFLUENCE_SPACE')
 
 # Updated API call to get only one article by number
-url = f"https://lendlease.service-now.com/api/now/table/kb_knowledge?sysparm_query=number={article_number}^latest=true&sysparm_display_value=true"
 
-# url = f"https://lendlease.service-now.com/api/now/table/kb_knowledge?sysparm_query=number={article_number}&sysparm_display_value=true"
-# url = f"https://lendlease.service-now.com/api/now/table/kb_knowledge?sysparm_query=sys_class_name!=^publishedISNOTEMPTY^latest=true^number={article_number}&sysparm_display_value=true"
-# url = f"https://lendlease.service-now.com/kb_view.do?sysparm_article={article_number}"
+
+
 payload = {}
 
 token = get_bearer_token()
@@ -610,76 +624,59 @@ headers = {
   'Authorization': f'Bearer {token}',
   'Cookie': 'BIGipServerpool_lendlease=c5889ad29f701618e3baa37002034b82; JSESSIONID=3901AC59B602B51CE1CF74C8956FD362; glide_node_id_for_js=fc4812175032dd94c0ff92cf846b17cf27f0dce0a6beb49e12e5c7bb0f48d836; glide_session_store=6360D6592B3D6E50E412F41CD891BF5D; glide_user_activity=U0N2M18xOnRMdkppdFlTN2o2cFlnUVdaQ082UjZ6S0pFdXV0dmZBb3BMcGxVa0hrZ1E9OlVBQWc4QWozUERYQi9mVCs2WDRJa0hTRTgwQjkxMGZkMzUrNGxlUXRNUW89; glide_user_route=glide.5a07cc0a1b859ed021434a69d48daaeb'
 }
-response = requests.get(url, headers=headers)
-
-if response.status_code != 200:
-    print(f"❌ Failed to fetch article {article_number}. Status code: {response.status_code}")
-    exit(1)
-
+headers = {'Authorization': f'Bearer {get_bearer_token()}'}
 timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-data = response.json()
-articles = data.get('result', [])
-
-if not articles:
-    print(f"❌ No article found with number {article_number}")
-    exit(1)
-
-article = articles[0]  # Just one
-parent_dir = f"KB_docx_files_{timestamp}"
-output_dir = os.path.join(parent_dir, article_number)
+output_dir = f"KB_migration_output_{timestamp}"
 os.makedirs(output_dir, exist_ok=True)
 
-# Download attachments
-downloaded_attachments = download_attachments_for_article(article['sys_id'], output_dir, headers)
 
 
-# Upload to Confluence if parameters are available in environment
-if confluence_url and confluence_username and confluence_token and confluence_space:
-    print("🚀 Uploading to Confluence...")
-    
-    # Create or update the Confluence page
-    confluence_page = create_or_update_confluence_page(
-        confluence_url,
-        confluence_username,
-        confluence_token,
-        confluence_space,
-        article,
-        downloaded_attachments
+for i, article_number in enumerate(kb_article_numbers, start=1):
+    print(f"\n--- Processing KB Article {article_number} ({i}/{len(kb_article_numbers)}) ---")
+    article_url = f"https://lendlease.service-now.com/api/now/table/kb_knowledge?sysparm_query=number={article_number}^latest=true&sysparm_display_value=true"
+    # article_url = f"https://lendlease.service-now.com/api/now/table/kb_knowledge?sysparm_query=number={article_number}&sysparm_display_value=true"
+    # article_url = f"https://lendlease.service-now.com/api/now/table/kb_knowledge?sysparm_query=sys_class_name!=^publishedISNOTEMPTY^latest=true^number={article_number}&sysparm_display_value=true"
+    # article_url = f"https://lendlease.service-now.com/kb_view.do?sysparm_article={article_number}"
+
+    response = requests.get(article_url, headers=headers)
+    if response.status_code != 200:
+        print(f"❌ Failed to fetch article {article_number}. Status: {response.status_code}")
+        continue
+
+    data = response.json()
+    articles = data.get("result", [])
+    if not articles:
+        print(f"❌ No article found with number {article_number}")
+        continue
+
+    article = articles[0]
+    article_folder = os.path.join(output_dir, article_number)
+    os.makedirs(article_folder, exist_ok=True)
+    attachments = download_attachments_for_article(
+        article['sys_id'], 
+        article_folder, 
+        headers
     )
-    
-    if confluence_page:
-        page_id = confluence_page['id']
-        
-        # Upload attachments to Confluence
-        for attachment in downloaded_attachments:
-            print(f"📎 Uploading attachment: {attachment['file_name']}")
-            uploaded = upload_attachment_to_confluence(
-                confluence_url,
-                confluence_username,
-                confluence_token,
-                page_id,
-                attachment['file_path'],
-                attachment['file_name']
+
+    page = create_or_update_confluence_page(
+            confluence_url, 
+            confluence_username, 
+            confluence_token, 
+            confluence_space, 
+            article, 
+            attachments
             )
-            if uploaded:
-                print(f"   ✅ Attachment uploaded successfully")
-            else:
-                print(f"   ❌ Failed to upload attachment")
-        
-        page_url = f"{confluence_url}/pages/viewpage.action?pageId={page_id}"
-        print(f"✅ Confluence page available at: {page_url}")
-    else:
-        print("❌ Failed to create/update Confluence page")
-        
-else:
-    missing_vars = []
-    if not confluence_url: missing_vars.append('CONFLUENCE_URL')
-    if not confluence_username: missing_vars.append('CONFLUENCE_USERNAME')
-    if not confluence_token: missing_vars.append('CONFLUENCE_TOKEN')
-    if not confluence_space: missing_vars.append('CONFLUENCE_SPACE')
-    
-    if missing_vars:
-        print(f"ℹ️  Missing Confluence environment variables: {', '.join(missing_vars)}")
-        print("   Add these to your .env file to enable Confluence upload.")
-    else:
-        print("ℹ️  No Confluence parameters provided. Skipping Confluence upload.")
+    page_id = page['id']
+    for att in attachments:
+        upload_attachment_to_confluence(
+            confluence_url, 
+            confluence_username, 
+            confluence_token, 
+            page_id, 
+            att['file_path'], 
+            att['file_name']
+        )
+
+    print(f"✅ Confluence page created/updated: {confluence_url}/pages/viewpage.action?pageId={page_id}")
+
+print("\n✅ All articles processed.")
