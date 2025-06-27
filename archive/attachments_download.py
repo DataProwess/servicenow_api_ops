@@ -88,7 +88,11 @@ def download_attachments_for_article(table_sys_id, output_dir, headers):
     for attachment in attachments:
         file_name = attachment.get('file_name')
         sys_id = attachment.get('sys_id')
+        content_type = attachment.get('content_type')
+        trimmed_content_type = content_type[content_type.find('/') + 1:] if content_type else 'unknown'
         file_name = f"{sys_id}_{file_name}" if file_name else f"{table_sys_id}_attachment"
+        timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+        
         download_link = attachment.get('download_link')
         file_size = attachment.get('size_bytes')
 
@@ -100,6 +104,19 @@ def download_attachments_for_article(table_sys_id, output_dir, headers):
                     with open(file_path, 'wb') as f:
                         f.write(file_response.content)
                     print(f"   ✓ Downloaded: {file_name} ({file_size} bytes)")
+                if file_response.status_code == 500:
+                    download_link=f"https://lendlease.service-now.com/sys_attachment.do?sysparm_referring_url=tear_off&view=true&sys_id={sys_id}"
+                    print(download_link)
+                    file_response = requests.get(download_link, headers=headers)
+                    print("1")
+                    file_name = f"{file_name}_{timestamp}.jpg" 
+                    print("1")
+                    file_path = os.path.join(output_dir, file_name)
+                    print("1")
+                    with open(file_path, 'wb') as f:
+                        f.write(file_response.content)
+                    print(f"   ✓ Downloaded: {file_name} ({file_size} bytes)")
+                
                 else:
                     print(f"   ✗ Failed to download {file_name} (Status {file_response.status_code})")
             except Exception as e:

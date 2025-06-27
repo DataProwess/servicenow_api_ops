@@ -7,6 +7,9 @@ from dotenv import load_dotenv
 from datetime import datetime
 import logging
 import time
+import re
+
+
 
 load_dotenv()
 
@@ -71,6 +74,14 @@ def get_bearer_token():
         log_error_to_file(f"❌ Token request failed: {str(e)}")
         raise
 
+def sanitize_filename(filename):
+    # Replace or remove illegal characters
+    illegal_chars = r'[<>:"/\\|?*\0]'
+    filename = re.sub(illegal_chars, '_', filename)
+    # Remove leading/trailing spaces and dots (Windows restrictions)
+    filename = filename.strip('. ').strip()
+    return filename
+
 def download_attachments_for_article(table_sys_id, output_dir, headers, ticket_number):
     # Define the attachment list URL
     attachment_url = f"https://lendlease.service-now.com/api/now/attachment?sysparm_query=table_sys_id={table_sys_id}"
@@ -114,6 +125,8 @@ def download_attachments_for_article(table_sys_id, output_dir, headers, ticket_n
         file_name = attachment.get('file_name')
         sys_id = attachment.get('sys_id')
         file_name = f"{sys_id}_{file_name}" if file_name else f"{table_sys_id}_attachment"
+        file_name = sanitize_filename(file_name)  # Sanitize filename
+        file_name = f"{file_name}_{timestamp}"  # Append timestamp to filename
         download_link = attachment.get('download_link')
         file_size = attachment.get('size_bytes')
 
