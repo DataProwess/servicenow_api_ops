@@ -16,9 +16,9 @@ log_dir = f'Treasury_total_logs_{timestamp}'
 os.makedirs(log_dir, exist_ok=True)
 
 # General log file
-log_file = os.path.join(log_dir, f'general_{timestamp}.log')
+log_file = os.path.join(log_dir, f'treasury_general_{timestamp}.log')
 # Error log file
-# error_log_file = os.path.join(log_dir, f'error_{timestamp}.log')
+error_log_file = os.path.join(log_dir, f'treasury_error_{timestamp}.log')
 
 # Configure root logger
 logging.basicConfig(
@@ -39,7 +39,7 @@ logging.basicConfig(
 # error_logger.addHandler(error_handler)
 def log_error_to_file(message, log_dir=log_dir, timestamp=timestamp):
     """Log error to file only when errors occur."""
-    error_log_file = os.path.join(log_dir, f'error_{timestamp}.log')
+    error_log_file = os.path.join(log_dir, f'treasury_error_{timestamp}.log')
     os.makedirs(log_dir, exist_ok=True)
     with open(error_log_file, 'a', encoding='utf-8') as f:
         timestamp_now = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
@@ -91,6 +91,7 @@ def download_attachments_for_article(table_sys_id, output_dir, headers, ticket_n
                 return 'unauthorized', None
             elif response.status_code != 200:
                 logging.error(f"❌ Failed to get attachments for ticket {ticket_number}, sys_id= {table_sys_id} (Status: {response.status_code})")
+                log_error_to_file(f"❌ Failed to get attachments for ticket {ticket_number}, sys_id= {table_sys_id} (Status: {response.status_code})")
                 return 'failed', None
             data = response.json()
             attachments = data.get('result', [])
@@ -101,6 +102,7 @@ def download_attachments_for_article(table_sys_id, output_dir, headers, ticket_n
             return 'success', attachments
         except Exception as e:
             logging.error(f"❌ Exception getting attachments for ticket {ticket_number}, sys_id= {table_sys_id} : {e}")
+            log_error_to_file(f"❌ Exception getting attachments for ticket {ticket_number}, sys_id= {table_sys_id} : {e}")
             return 'error', None
 
     # Try to get attachment list; refresh token if unauthorized
@@ -140,8 +142,10 @@ def download_attachments_for_article(table_sys_id, output_dir, headers, ticket_n
                     logging.info(f"   ✓ Downloaded attachment '{file_name}' for ticket {ticket_number} ({file_size} bytes)")
                 else:
                     logging.error(f"   ✗ Failed to download attachment '{file_name}' , sys_id= {table_sys_id} (Status {file_response.status_code})")
+                    log_error_to_file(f"   ✗ Failed to download attachment '{file_name}' , sys_id= {table_sys_id} (Status {file_response.status_code})")
             except Exception as e:
                 logging.error(f"   ✗ Error downloading '{file_name}' , sys_id= {table_sys_id} : {e}")
+                log_error_to_file(f"   ✗ Error downloading '{file_name}' , sys_id= {table_sys_id} : {e}")
 
 def download_servicenow_pdf(sys_id, pdf_dir, headers, ticket_number):
     url = f"https://lendlease.service-now.com/x_llusn_bankg_bi_req.do?PDF&sys_id={sys_id}&sysparm_view=Default%20view"
