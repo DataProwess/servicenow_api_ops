@@ -141,11 +141,11 @@ def download_attachments_for_article(table_sys_id, output_dir, headers, ticket_n
                         f.write(file_response.content)
                     logging.info(f"   ✓ Downloaded attachment '{file_name}' for ticket {ticket_number} ({file_size} bytes)")
                 else:
-                    logging.error(f"   ✗ Failed to download attachment '{file_name}' , sys_id= {table_sys_id} (Status {file_response.status_code})")
-                    log_error_to_file(f"   ✗ Failed to download attachment '{file_name}' , sys_id= {table_sys_id} (Status {file_response.status_code})")
+                    logging.error(f"   ✗ Failed to download attachment '{file_name}' ,for ticket {ticket_number}, sys_id= {table_sys_id} (Status {file_response.status_code})")
+                    log_error_to_file(f"   ✗ Failed to download attachment '{file_name}' ,for ticket {ticket_number}, sys_id= {table_sys_id} (Status {file_response.status_code})")
             except Exception as e:
-                logging.error(f"   ✗ Error downloading '{file_name}' , sys_id= {table_sys_id} : {e}")
-                log_error_to_file(f"   ✗ Error downloading '{file_name}' , sys_id= {table_sys_id} : {e}")
+                logging.error(f"   ✗ Error downloading '{file_name}' ,for ticket {ticket_number}, sys_id= {table_sys_id} : {e}")
+                log_error_to_file(f"   ✗ Error downloading '{file_name}' ,for ticket {ticket_number}, sys_id= {table_sys_id} : {e}")
 
 def download_servicenow_pdf(sys_id, pdf_dir, headers, ticket_number):
     url = f"https://lendlease.service-now.com/x_llusn_bankg_bi_req.do?PDF&sys_id={sys_id}&sysparm_view=Default%20view"
