@@ -90,8 +90,8 @@ def download_attachments_for_article(table_sys_id, output_dir, headers, ticket_n
             if response.status_code == 401:
                 return 'unauthorized', None
             elif response.status_code != 200:
-                logging.error(f"❌ Failed to get attachments for ticket {ticket_number}, sys_id= {table_sys_id} (Status: {response.status_code})")
-                log_error_to_file(f"❌ Failed to get attachments for ticket {ticket_number}, sys_id= {table_sys_id} (Status: {response.status_code})")
+                logging.error(f"❌ Failed to get attachments for ticket= {ticket_number}, sys_id= {table_sys_id} (Status: {response.status_code})")
+                log_error_to_file(f"❌ Failed to get attachments for ticket= {ticket_number}, sys_id= {table_sys_id} (Status: {response.status_code})")
                 return 'failed', None
             data = response.json()
             attachments = data.get('result', [])
@@ -101,8 +101,8 @@ def download_attachments_for_article(table_sys_id, output_dir, headers, ticket_n
             logging.info(f"📎 Found {len(attachments)} attachment(s) for ticket {ticket_number}")
             return 'success', attachments
         except Exception as e:
-            logging.error(f"❌ Exception getting attachments for ticket {ticket_number}, sys_id= {table_sys_id} : {e}")
-            log_error_to_file(f"❌ Exception getting attachments for ticket {ticket_number}, sys_id= {table_sys_id} : {e}")
+            logging.error(f"❌ Exception getting attachments for ticket= {ticket_number}, sys_id= {table_sys_id} : {e}")
+            log_error_to_file(f"❌ Exception getting attachments for ticket= {ticket_number}, sys_id= {table_sys_id} : {e}")
             return 'error', None
 
     # Try to get attachment list; refresh token if unauthorized
@@ -139,13 +139,13 @@ def download_attachments_for_article(table_sys_id, output_dir, headers, ticket_n
                     file_path = os.path.join(output_dir, file_name)
                     with open(file_path, 'wb') as f:
                         f.write(file_response.content)
-                    logging.info(f"   ✓ Downloaded attachment '{file_name}' for ticket {ticket_number} ({file_size} bytes)")
+                    logging.info(f"   ✓ Downloaded attachment '{file_name}' for ticket= {ticket_number} ({file_size} bytes)")
                 else:
-                    logging.error(f"   ✗ Failed to download attachment '{file_name}' ,for ticket {ticket_number}, sys_id= {table_sys_id} (Status {file_response.status_code})")
-                    log_error_to_file(f"   ✗ Failed to download attachment '{file_name}' ,for ticket {ticket_number}, sys_id= {table_sys_id} (Status {file_response.status_code})")
+                    logging.error(f"   ✗ Failed to download attachment '{file_name}' ,for ticket= {ticket_number}, sys_id= {table_sys_id} (Status {file_response.status_code})")
+                    log_error_to_file(f"   ✗ Failed to download attachment '{file_name}' ,for ticket= {ticket_number}, sys_id= {table_sys_id} (Status {file_response.status_code})")
             except Exception as e:
-                logging.error(f"   ✗ Error downloading '{file_name}' ,for ticket {ticket_number}, sys_id= {table_sys_id} : {e}")
-                log_error_to_file(f"   ✗ Error downloading '{file_name}' ,for ticket {ticket_number}, sys_id= {table_sys_id} : {e}")
+                logging.error(f"   ✗ Error downloading '{file_name}' ,for ticket= {ticket_number}, sys_id= {table_sys_id} : {e}")
+                log_error_to_file(f"   ✗ Error downloading '{file_name}' ,for ticket= {ticket_number}, sys_id= {table_sys_id} : {e}")
 
 def download_servicenow_pdf(sys_id, pdf_dir, headers, ticket_number):
     url = f"https://lendlease.service-now.com/x_llusn_bankg_bi_req.do?PDF&sys_id={sys_id}&sysparm_view=Default%20view"
@@ -162,11 +162,11 @@ def download_servicenow_pdf(sys_id, pdf_dir, headers, ticket_number):
         file_path = os.path.join(pdf_dir, filename)
         with open(file_path, "wb") as f:
             f.write(response.content)
-        logging.info(f"   ✓ PDF successfully saved for ticket {ticket_number} as {file_path}")
+        logging.info(f"   ✓ PDF successfully saved for ticket= {ticket_number} as {file_path}")
     else:
-        logging.error(f"   ✗ Failed to download PDF for ticket {ticket_number}, sys_id {sys_id}. Status: {response.status_code}")
-        log_error_to_file(f"   ✗ Failed to download PDF for ticket {ticket_number}, sys_id {sys_id}. Status: {response.status_code}")
-        log_error_to_file(f"   ✗ PDF download failure details for ticket {ticket_number}, sys_id= {sys_id}. : {response.text}")
+        logging.error(f"   ✗ Failed to download PDF for ticket= {ticket_number}, sys_id= {sys_id}. Status: {response.status_code}")
+        log_error_to_file(f"   ✗ Failed to download PDF for ticket= {ticket_number}, sys_id= {sys_id}. Status: {response.status_code}")
+        log_error_to_file(f"   ✗ PDF download failure details for ticket= {ticket_number}, sys_id= {sys_id}. : {response.text}")
 
 def download_all_attachments_and_pdfs(json_file, headers):
     with open(json_file, 'r') as f:
