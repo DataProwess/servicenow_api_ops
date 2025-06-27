@@ -5,8 +5,17 @@ import argparse
 from urllib.parse import urlencode
 import datetime
 from dotenv import load_dotenv
+import re
 
 load_dotenv()
+
+def sanitize_filename(filename):
+    # Replace or remove illegal characters
+    illegal_chars = r'[<>:"/\\|?*\0]'
+    filename = re.sub(illegal_chars, '_', filename)
+    # Remove leading/trailing spaces and dots (Windows restrictions)
+    filename = filename.strip('. ').strip()
+    return filename
 
 def get_bearer_token():
     url = "https://lendlease.service-now.com/oauth_token.do"
@@ -91,6 +100,7 @@ def download_attachments_for_article(table_sys_id, output_dir, headers):
         content_type = attachment.get('content_type')
         trimmed_content_type = content_type[content_type.find('/') + 1:] if content_type else 'unknown'
         file_name = f"{sys_id}_{file_name}" if file_name else f"{table_sys_id}_attachment"
+        file_name = sanitize_filename(file_name) 
         timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
         
         download_link = attachment.get('download_link')
@@ -100,19 +110,24 @@ def download_attachments_for_article(table_sys_id, output_dir, headers):
             try:
                 file_response = requests.get(download_link, headers=headers)
                 if file_response.status_code == 200:
+                    print("200 OK")
                     file_path = os.path.join(output_dir, file_name)
                     with open(file_path, 'wb') as f:
                         f.write(file_response.content)
                     print(f"   ✓ Downloaded: {file_name} ({file_size} bytes)")
-                if file_response.status_code == 500:
-                    download_link=f"https://lendlease.service-now.com/sys_attachment.do?sysparm_referring_url=tear_off&view=true&sys_id={sys_id}"
+                elif file_response.status_code == 500:
+                    download_link=f"https://lendlease.service-now.com/sys_attachment.do?sys_id=61a7faf3133cef848f1a3d27d144b04d&sysparm_this_url=x_llusn_bankg_bi_req.do%3Fsys_id%3D8c842a9213ace74097ac3998d144b057%26sysparm_stack%3D%26sysparm_view%3D"
                     print(download_link)
+                    
+                    headers['Authorization'] = f'Bearer {get_bearer_token()}'
+                    headers['Content-Type'] = f'{content_type}'
+                    print(headers)
                     file_response = requests.get(download_link, headers=headers)
-                    print("1")
+             
                     file_name = f"{file_name}_{timestamp}.jpg" 
-                    print("1")
+             
                     file_path = os.path.join(output_dir, file_name)
-                    print("1")
+             
                     with open(file_path, 'wb') as f:
                         f.write(file_response.content)
                     print(f"   ✓ Downloaded: {file_name} ({file_size} bytes)")

@@ -7,6 +7,7 @@ from dotenv import load_dotenv
 from datetime import datetime
 import logging
 import time
+import re
 
 load_dotenv()
 
@@ -45,7 +46,13 @@ def log_error_to_file(message, log_dir=log_dir, timestamp=timestamp):
         timestamp_now = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
         f.write(f"{timestamp_now} - ERROR - {message}\n")
 
-
+def sanitize_filename(filename):
+    # Replace or remove illegal characters
+    illegal_chars = r'[<>:"/\\|?*\0]'
+    filename = re.sub(illegal_chars, '_', filename)
+    # Remove leading/trailing spaces and dots (Windows restrictions)
+    filename = filename.strip('. ').strip()
+    return filename
 # Token cache to avoid repeated requests
 token_cache = {'value': None, 'expires': 0}
 
@@ -122,6 +129,7 @@ def download_attachments_for_article(table_sys_id, output_dir, headers, ticket_n
         file_name = attachment.get('file_name')
         sys_id = attachment.get('sys_id')
         file_name = f"{sys_id}_{file_name}" if file_name else f"{table_sys_id}_attachment"
+        file_name = sanitize_filename(file_name)  # Sanitize the filename
         download_link = attachment.get('download_link')
         file_size = attachment.get('size_bytes')
 
