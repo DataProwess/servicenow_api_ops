@@ -174,7 +174,7 @@ def download_all_attachments_and_pdfs(json_file, headers):
     # Create master folder with timestamp (use the same timestamp as logs)
     trimmed_path = json_file[:-5]
     master_timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-    master_folder = f"HR_Tickets_attachments_and_pdfs_{trimmed_path}_{master_timestamp}"
+    master_folder = f"Treasury_Tickets_attachments_and_pdfs_{trimmed_path}_{master_timestamp}"
     os.makedirs(master_folder, exist_ok=True)
 
     for ticket in tickets:
