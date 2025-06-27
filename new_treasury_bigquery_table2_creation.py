@@ -47,11 +47,11 @@ def create_bigquery_table():
     # Define schemas
     schema_tickets = [
         bigquery.SchemaField("ticket_number", "STRING", mode="REQUIRED"),
-        bigquery.SchemaField("PDFs", "STRING")
+        bigquery.SchemaField("pdfs", "STRING")
     ]
     schema_attachments = [
         bigquery.SchemaField("ticket_number", "STRING", mode="REQUIRED"),
-        bigquery.SchemaField("Attachments", "STRING")
+        bigquery.SchemaField("attachments", "STRING")
     ]
     # Create tables
     create_table_if_not_exists(bq_client, "treasury_PDFs", schema_tickets)
