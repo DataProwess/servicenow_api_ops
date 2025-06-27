@@ -29,7 +29,7 @@ def get_hr_folders():
     hr_folders = set()
     for blob in blobs:
         path_parts = blob.name.split('/')
-        if len(path_parts) > 2 and path_parts[1].startswith("BIR"):
+        if len(path_parts) > 2 and path_parts[1].startswith("HR"):
             hr_folders.add(path_parts[1])
     return sorted(hr_folders)
 
