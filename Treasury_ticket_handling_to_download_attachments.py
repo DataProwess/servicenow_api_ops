@@ -221,3 +221,7 @@ if __name__ == "__main__":
     }
 
     download_all_attachments_and_pdfs(args.json_path, headers)
+    
+    print("\033[92mAll Treasury attachments and PDFs downloaded successfully.\033[0m")
+    logging.info("✅ All Treasury attachments and PDFs downloaded successfully.")
+
