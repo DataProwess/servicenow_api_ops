@@ -2,7 +2,7 @@ import json
 import csv
 import datetime
 
-input_file='Treasury_records_combined_20250620_071633.json'
+input_file="hr_records_batch_1.json"
 # Load your JSON data from response.json
 with open(input_file, 'r', encoding='utf-8') as f:
     data = json.load(f)
