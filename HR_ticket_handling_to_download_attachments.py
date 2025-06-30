@@ -93,8 +93,8 @@ def download_attachments_for_article(table_sys_id, output_dir, headers, ticket_n
             if response.status_code == 401:
                 return 'unauthorized', None
             elif response.status_code != 200:
-                logging.error(f"❌ Failed to get attachments for ticket= {ticket_number}, sys_id= {table_sys_id} (Status: {response.status_code})")
-                log_error_to_file(f"❌ Failed to get attachments for ticket= {ticket_number}, sys_id= {table_sys_id} (Status: {response.status_code})")
+                logging.error(f"❌ Failed to get attachments for ticket= {ticket_number}, table_sys_id= {table_sys_id} (Status: {response.status_code})")
+                log_error_to_file(f"❌ Failed to get attachments for ticket= {ticket_number}, table_sys_id= {table_sys_id} (Status: {response.status_code})")
                 return 'failed', None
             data = response.json()
             attachments = data.get('result', [])
@@ -104,8 +104,8 @@ def download_attachments_for_article(table_sys_id, output_dir, headers, ticket_n
             logging.info(f"📎 Found {len(attachments)} attachment(s) for ticket= {ticket_number}")
             return 'success', attachments
         except Exception as e:
-            logging.error(f"❌ Exception getting attachments for ticket= {ticket_number}, sys_id= {table_sys_id} : {e}")
-            log_error_to_file(f"❌ Exception getting attachments for ticket= {ticket_number}, sys_id= {table_sys_id} : {e}")
+            logging.error(f"❌ Exception getting attachments for ticket= {ticket_number}, table_sys_id= {table_sys_id} : {e}")
+            log_error_to_file(f"❌ Exception getting attachments for ticket= {ticket_number}, table_sys_id= {table_sys_id} : {e}")
             return 'error', None
 
     # Try to get attachment list; refresh token if unauthorized
@@ -126,7 +126,7 @@ def download_attachments_for_article(table_sys_id, output_dir, headers, ticket_n
         sys_id = attachment.get('sys_id')
         file_name = f"{sys_id}_{file_name}" if file_name else f"{table_sys_id}_attachment"
         file_name = sanitize_filename(file_name)  # Sanitize filename
-        file_name = f"{file_name}_{timestamp}"  # Append timestamp to filename
+
         download_link = attachment.get('download_link')
         file_size = attachment.get('size_bytes')
 
@@ -146,11 +146,11 @@ def download_attachments_for_article(table_sys_id, output_dir, headers, ticket_n
                         f.write(file_response.content)
                     logging.info(f"   ✓ Downloaded attachment '{file_name}' for ticket= {ticket_number} ({file_size} bytes)")
                 else:
-                    logging.error(f"   ✗ Failed to download attachment '{file_name}' ,for ticket= {ticket_number}, sys_id= {table_sys_id} (Status {file_response.status_code})")
-                    log_error_to_file(f"   ✗ Failed to download attachment '{file_name}' ,for ticket= {ticket_number}, sys_id= {table_sys_id} (Status {file_response.status_code})")
+                    logging.error(f"   ✗ Failed to download attachment '{file_name}' ,for ticket= {ticket_number}, table_sys_id= {table_sys_id} , sys_id = {sys_id} , (Status {file_response.status_code})")
+                    log_error_to_file(f"   ✗ Failed to download attachment '{file_name}' ,for ticket= {ticket_number}, table_sys_id= {table_sys_id} , sys_id = {sys_id} , (Status {file_response.status_code})")
             except Exception as e:
-                logging.error(f"   ✗ Error downloading '{file_name}' ,for ticket= {ticket_number}, sys_id= {table_sys_id} : {e}")
-                log_error_to_file(f"   ✗ Error downloading '{file_name}' ,for ticket= {ticket_number}, sys_id= {table_sys_id} : {e}")
+                logging.error(f"   ✗ Error downloading '{file_name}' ,for ticket= {ticket_number}, table_sys_id= {table_sys_id} , sys_id = {sys_id}  : {e}")
+                log_error_to_file(f"   ✗ Error downloading '{file_name}' ,for ticket= {ticket_number}, table_sys_id= {table_sys_id} , sys_id = {sys_id}  : {e}")
                 
 
 def download_servicenow_pdf(sys_id, pdf_dir, headers, ticket_number):
@@ -164,7 +164,7 @@ def download_servicenow_pdf(sys_id, pdf_dir, headers, ticket_number):
         response = requests.get(url, headers=headers)
 
     if response.status_code == 200:
-        filename = f"{sys_id}.pdf"
+        filename = f"{ticket_number}_{sys_id}.pdf"
         file_path = os.path.join(pdf_dir, filename)
         with open(file_path, "wb") as f:
             f.write(response.content)
@@ -173,7 +173,7 @@ def download_servicenow_pdf(sys_id, pdf_dir, headers, ticket_number):
         msg = f"Failed to download PDF for ticket= {ticket_number}, sys_id {sys_id}. Status: {response.status_code}"
         logging.error(msg)
         log_error_to_file(msg)
-        log_error_to_file(f"PDF download failure details for ticket= {ticket_number}, sys_id= {sys_id}. : {response.text}")
+        log_error_to_file(f"PDF download failure details for ticket= {ticket_number}, table_sys_id= {sys_id}. : {response.text}")
 
 def download_all_attachments_and_pdfs(json_file, headers):
     with open(json_file, 'r') as f:
