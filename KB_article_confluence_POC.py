@@ -443,7 +443,7 @@ def create_confluence_content(article, attachments):
     # content = f"<h1>{article.get('number', 'KB Article')}</h1>"
     
     # Add metadata as a table
-    content += "<h2>Article Information</h2>"
+    content = "<h2>Article Information</h2>"
     content += "<table><tbody>"
     
     # Key metadata fields
