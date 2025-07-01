@@ -449,51 +449,47 @@ def download_attachments_for_article(table_sys_id, output_dir, headers):
 
 
 def add_html_table(doc, table_elem):
-        rows = table_elem.find_all('tr')
-        if not rows:
-            return
-        num_cols = max(len(row.find_all(['td', 'th'])) for row in rows)
-        table = doc.add_table(rows=0, cols=num_cols)
-        table.style = 'Table Grid'
+    rows = table_elem.find_all('tr')
+    if not rows:
+        return
+    num_cols = max(len(row.find_all(['td', 'th'])) for row in rows)
+    table = doc.add_table(rows=0, cols=num_cols)
+    table.style = 'Table Grid'
 
-        def process_cell_content(cell_elem, cell):
-            # Clear any existing paragraphs in the cell (usually empty initially)
-            for para in cell.paragraphs:
-                p = para._element
-                p.getparent().remove(p)
-            # Add one new paragraph to the cell
-            para = cell.add_paragraph()
+    def process_element(elem, parent_paragraph):
+        from bs4 import NavigableString, Tag
+        if isinstance(elem, NavigableString):
+            text = str(elem).strip()
+            if text:
+                parent_paragraph.add_run(text + ' ')
+        elif isinstance(elem, Tag):
+            if elem.name == 'img':
+                src = elem.get('src', '')
+                sysid_match = re.search(r'sys_id=([a-zA-Z0-9]+)', src)
+                placeholder_text = "[IMAGE_PLACEHOLDER:UNKNOWN]"
+                if sysid_match:
+                    sysid = sysid_match.group(1)
+                    placeholder_text = f"[IMAGE_PLACEHOLDER:{sysid}]"
+                parent_paragraph.add_run(placeholder_text + ' ')
+            elif elem.name == 'br':
+                parent_paragraph.add_run('\n')
+            elif elem.name == 'a':
+                # Handle hyperlink in table cell
+                href = elem.get('href')
+                link_text = elem.get_text(strip=True)
+                if href and link_text:
+                    add_hyperlink(parent_paragraph, href, link_text)
+            else:
+                for child in elem.children:
+                    process_element(child, parent_paragraph)
 
-            def process_element(elem, parent_paragraph):
-                from bs4 import NavigableString, Tag
-                if isinstance(elem, NavigableString):
-                    text = str(elem).strip()
-                    if text:
-                        parent_paragraph.add_run(text + ' ')
-                elif isinstance(elem, Tag):
-                    if elem.name == 'img':
-                        src = elem.get('src', '')
-                        import re
-                        sysid_match = re.search(r'sys_id=([a-zA-Z0-9]+)', src)
-                        placeholder_text = "[IMAGE_PLACEHOLDER:UNKNOWN]"
-                        if sysid_match:
-                            sysid = sysid_match.group(1)
-                            placeholder_text = f"[IMAGE_PLACEHOLDER:{sysid}]"
-                        parent_paragraph.add_run(placeholder_text + ' ')
-                    elif elem.name == 'br':
-                        parent_paragraph.add_run('\n')
-                    else:
-                        for child in elem.children:
-                            process_element(child, parent_paragraph)
-
+    for row_elem in rows:
+        row_cells = row_elem.find_all(['td', 'th'])
+        row = table.add_row()
+        for i, cell_elem in enumerate(row_cells):
+            para = row.cells[i].add_paragraph()
             for child in cell_elem.children:
                 process_element(child, para)
-
-        for row_elem in rows:
-            row_cells = row_elem.find_all(['td', 'th'])
-            row = table.add_row()
-            for i, cell_elem in enumerate(row_cells):
-                process_cell_content(cell_elem, row.cells[i])
 
 
 def replace_placeholders_with_images(docx_path, local_image_folder, output_path):
