@@ -117,6 +117,6 @@ if __name__ == "__main__":
     args = parser.parse_args()
  
     batch_size = args.batch_size
-    offset_increment = batch_size + 1
+    offset_increment = batch_size 
  
     fetch_all_records(batch_size=batch_size, offset_increment=offset_increment)
