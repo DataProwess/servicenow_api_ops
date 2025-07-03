@@ -80,12 +80,12 @@ def create_bigquery_table():
     schema_tickets = [
         bigquery.SchemaField("ticket_number", "STRING", mode="REQUIRED"),
         bigquery.SchemaField("pdfs", "STRING"),
-        bigquery.SchemaField("size_in_KB", "INTEGER"),
+        bigquery.SchemaField("size_in_KB", "FLOAT"),
     ]
     schema_attachments = [
         bigquery.SchemaField("ticket_number", "STRING", mode="REQUIRED"),
         bigquery.SchemaField("attachments", "STRING"),
-        bigquery.SchemaField("size_in_KB", "INTEGER"),
+        bigquery.SchemaField("size_in_KB", "FLOAT"),
     ]
 
     # Create tables if not exist
