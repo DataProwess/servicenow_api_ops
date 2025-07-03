@@ -41,7 +41,7 @@ def get_bearer_token():
         raise SystemExit(1)
  
 def fetch_batch(limit, offset):
-    url = "https://lendlease.service-now.com/api/now/table/llusn_bankg_bonding_instrument"
+    url = "https://lendlease.service-now.com/api/now/table/x_llusn_bankg_bonding_instrument"
     headers = {
         'Authorization': f'Bearer {get_bearer_token()}',
     }
@@ -70,7 +70,7 @@ def fetch_all_records(batch_size=1000, offset_increment=1001):
     all_results = []
  
     timestamp = datetime.datetime.now().strftime('%Y%m%d_%H%M%S')
-    master_folder = f"bi_Treasury_tickets_JSON_responses_{timestamp}"
+    master_folder = f"BI_Treasury_tickets_JSON_responses_{timestamp}"
     os.makedirs(master_folder, exist_ok=True)
  
     while True:
@@ -99,7 +99,7 @@ def fetch_all_records(batch_size=1000, offset_increment=1001):
         batch_num += 1
  
     # Save combined file
-    combined_filename = f"bi_Treasury_records_combined_{timestamp}.json"
+    combined_filename = f"Treasury_records_combined_{timestamp}.json"
     combined_file = os.path.join(master_folder, combined_filename)
     with open(combined_file, "w", encoding="utf-8") as f:
         json.dump({"result": all_results}, f, indent=2)
@@ -117,6 +117,6 @@ if __name__ == "__main__":
     args = parser.parse_args()
  
     batch_size = args.batch_size
-    offset_increment = batch_size + 1
+    offset_increment = batch_size  
  
     fetch_all_records(batch_size=batch_size, offset_increment=offset_increment)
