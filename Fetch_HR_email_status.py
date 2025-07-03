@@ -165,7 +165,8 @@ if __name__ == "__main__":
     "3":  "Closed Complete",
     "4":  "Closed Incomplete",
     "7":  "Cancelled",
-    "18": "Work In Progress"
+    "18": "Work In Progress",
+    "24": "Suspended",
     }
 
     json_file_path = "hr_records_batch_1.json"
