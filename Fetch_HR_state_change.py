@@ -95,8 +95,8 @@ def replace_status_values(audit_data, mapping):
 def process_tickets_from_file(master_folder, json_filepath):
     with open(json_filepath, 'r', encoding='utf-8') as f:
         data = json.load(f)
-    # tickets = data.get("result", [])
-    tickets = data.get("result", [])[:10]  # first 10 tickets
+    tickets = data.get("result", [])
+    # tickets = data.get("result", [])[:10]  # first 10 tickets
     combined_results = []  # List to hold all enriched audit records
 
     for ticket in tickets:
