@@ -17,7 +17,7 @@ def clean_html(raw_html):
     text = re.sub(r'\s+', ' ', text)
     return text
 
-input_file = "hr_records_batch_1.json"
+input_file = "Treasury_records_combined_20250703_125727.json"
 with open(input_file, 'r', encoding='utf-8') as f:
     data = json.load(f)
 
@@ -42,7 +42,7 @@ for row in rows:
     processed_rows.append(processed_row)
 
 timestamp = datetime.datetime.now().strftime('%Y%m%d_%H%M%S')
-output_file = f'{input_file}_output_{timestamp}.csv'
+output_file = f'{input_file}_CLEANED_output_{timestamp}.csv'
 with open(output_file, 'w', encoding='utf-8', newline='') as f:
     writer = csv.writer(f, quoting=csv.QUOTE_ALL)
     writer.writerow(headers)
