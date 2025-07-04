@@ -10,23 +10,24 @@ bucket_name = "demo_hr_bucket"
 main_folder = "demo_hr_upload"
 project_id = "cdhnonprodpnc44829"
 dataset_id = "hr_tickets_dataset"
-table_pdfs_id = "hr_PDFs_with_size"
-table_attachments_id = "hr_Attachments_with_size"
+table_pdfs_id = "hr_PDFs_with_size_and_name"
+table_attachments_id = "hr_Attachments_with_size_and_name"
 
 
-def generate_console_urls_and_sizes(folder_path):
+def generate_console_urls_sizes_and_filenames(folder_path):
     """
-    List blobs in the given folder path and return list of (url, size) tuples.
+    List blobs in the given folder path and return list of (url, size_in_KB, filename) tuples.
     """
     storage_client = storage.Client()
     blobs = storage_client.list_blobs(bucket_name, prefix=folder_path)
-    url_size_list = []
+    url_size_name_list = []
     for blob in blobs:
         if not blob.name.endswith('/'):
             url = f"https://storage.cloud.google.com/{bucket_name}/{blob.name}?authuser=1"
-            size = blob.size/1024  # size in bytes
-            url_size_list.append((url, size))
-    return url_size_list
+            size_in_KB = blob.size / 1024  # Convert bytes to KB (binary)
+            filename = blob.name.split('/')[-1]  # Extract filename from blob.name
+            url_size_name_list.append((url, size_in_KB, filename))
+    return url_size_name_list
 
 
 def get_hr_folders():
@@ -53,7 +54,7 @@ def create_dataset_if_not_exists(bq_client, dataset_id):
         print(f"Dataset {dataset_id} already exists")
     except Exception:
         dataset = bigquery.Dataset(dataset_ref)
-        dataset = bq_client.create_dataset(dataset)
+        bq_client.create_dataset(dataset)
         print(f"Created dataset {dataset_id}")
 
 
@@ -76,16 +77,18 @@ def create_bigquery_table():
     bq_client = bigquery.Client(project=project_id)
     create_dataset_if_not_exists(bq_client, dataset_id)
 
-    # Define schemas with size_bytes column
+    # Define schemas with size_in_KB and filename columns
     schema_tickets = [
         bigquery.SchemaField("ticket_number", "STRING", mode="REQUIRED"),
         bigquery.SchemaField("pdfs", "STRING"),
         bigquery.SchemaField("size_in_KB", "FLOAT"),
+        bigquery.SchemaField("filename", "STRING"),
     ]
     schema_attachments = [
         bigquery.SchemaField("ticket_number", "STRING", mode="REQUIRED"),
         bigquery.SchemaField("attachments", "STRING"),
         bigquery.SchemaField("size_in_KB", "FLOAT"),
+        bigquery.SchemaField("filename", "STRING"),
     ]
 
     # Create tables if not exist
@@ -97,12 +100,17 @@ def create_bigquery_table():
     hr_numbers = get_hr_folders()
     for hr in hr_numbers:
         pdf_folder = f"{main_folder}/{hr}/PDFs/"
-        pdf_url_sizes = generate_console_urls_and_sizes(pdf_folder)
-        if pdf_url_sizes:
-            pdf_url, size = pdf_url_sizes[0]
+        pdf_url_size_name = generate_console_urls_sizes_and_filenames(pdf_folder)
+        if pdf_url_size_name:
+            pdf_url, size_in_KB, filename = pdf_url_size_name[0]
         else:
-            pdf_url, size = None, None
-        tickets_data.append({"ticket_number": hr, "pdfs": pdf_url, "size_in_KB": size})
+            pdf_url, size_in_KB, filename = None, None, None
+        tickets_data.append({
+            "ticket_number": hr,
+            "pdfs": pdf_url,
+            "size_in_KB": size_in_KB,
+            "filename": filename
+        })
     df_tickets = pd.DataFrame(tickets_data)
 
     # Load tickets data into BigQuery
@@ -118,9 +126,14 @@ def create_bigquery_table():
     attachments_data = []
     for hr in hr_numbers:
         attachments_folder = f"{main_folder}/{hr}/Attachments/"
-        attachment_url_sizes = generate_console_urls_and_sizes(attachments_folder)
-        for attachment_url, size in attachment_url_sizes:
-            attachments_data.append({"ticket_number": hr, "attachments": attachment_url, "size_in_KB": size})
+        attachment_url_size_name = generate_console_urls_sizes_and_filenames(attachments_folder)
+        for attachment_url, size_in_KB, filename in attachment_url_size_name:
+            attachments_data.append({
+                "ticket_number": hr,
+                "attachments": attachment_url,
+                "size_in_KB": size_in_KB,
+                "filename": filename
+            })
     df_attachments = pd.DataFrame(attachments_data)
 
     # Load attachments data into BigQuery
