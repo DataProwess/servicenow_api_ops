@@ -7,6 +7,7 @@ from datetime import datetime
 import logging
 import time
 import json
+import argparse
 
 load_dotenv()
 
@@ -14,10 +15,10 @@ load_dotenv()
 timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
 
 # Define log folder and files with timestamp
-log_dir = f"HR_EMAIL_STATUS_total_logs_{timestamp}"
+log_dir = f"HR_STATE_CHANGE_total_logs_{timestamp}"
 os.makedirs(log_dir, exist_ok=True)
 
-log_file = os.path.join(log_dir, f"hr_EMAIL_STATUS_general_{timestamp}.log")
+log_file = os.path.join(log_dir, f"general_HR_STATE_CHANGE_{timestamp}.log")
 
 # Configure root logger
 logging.basicConfig(
@@ -32,7 +33,7 @@ logging.basicConfig(
 
 def log_error_to_file(message, log_dir=log_dir, timestamp=timestamp):
     """Log error to file only when errors occur."""
-    error_log_file = os.path.join(log_dir, f'hr_EMAIL_STATUS_error_{timestamp}.log')
+    error_log_file = os.path.join(log_dir, f'error_HR_STATE_CHANGE_{timestamp}.log')
     os.makedirs(log_dir, exist_ok=True)
     with open(error_log_file, 'a', encoding='utf-8') as f:
         timestamp_now = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
@@ -159,6 +160,13 @@ def get_sys_audit(master_folder,ticket_number, sys_id):
 # Example usage:
 if __name__ == "__main__":
     # Path to your JSON file containing ticket data
+    parser = argparse.ArgumentParser(description="Process ServiceNow tickets and fetch audit logs.")
+    parser.add_argument(
+        "--json_file",
+        required=True,
+        help="Path to the JSON file containing ticket data."
+    )
+    args = parser.parse_args()
     status_mapping = {
     "10": "Ready",
     "20": "Awaiting Response",
@@ -169,7 +177,7 @@ if __name__ == "__main__":
     "24": "Suspended",
     }
 
-    json_file_path = "hr_records_batch_1.json"
+    json_file_path = args.json_file
     master_folder= f"HR_EMAIL_STATUS_JSON_responses_{timestamp}"
     process_tickets_from_file(master_folder,json_file_path)
 
