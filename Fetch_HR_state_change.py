@@ -129,7 +129,7 @@ def process_tickets_from_file(master_folder, json_filepath):
     final_output = {"result": combined_results}
 
     # Save to combined JSON file
-    combined_file_path = os.path.join(master_folder, f"combined_audit_data_{timestamp}.json")
+    combined_file_path = os.path.join(master_folder, f"Combined_state_change_data_{timestamp}.json")
     os.makedirs(master_folder, exist_ok=True)
     with open(combined_file_path, 'w', encoding='utf-8') as f:
         json.dump(final_output, f, indent=4)
