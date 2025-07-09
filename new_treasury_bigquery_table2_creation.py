@@ -2,16 +2,18 @@ from google.cloud import storage, bigquery
 import pandas as pd
 import os
 
+# Set credentials
 os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = "cdhnonprodtreasury87796-fd10b79fc8d5.json"
 
+# Configuration
 bucket_name = "treasury_tickets_demo"
-main_folder = "Treasury_Tickets_20250613_0959"
+main_folder = "anish_demo_treasury_upload"
 project_id = "cdhnonprodtreasury87796"
 dataset_id = "treasury_tickets_dataset"
 
-# Define table names as variables
-table_pdfs_id = "demo_Treasury_PDFs_with_size_and_name"
-table_attachments_id = "demo_Treasury_Attachments_with_size_and_name"
+# Table names
+table_pdfs_id = "anish_demo_Treasury_PDFs_with_size_and_name"
+table_attachments_id = "anish_demo_Treasury_Attachments_with_size_and_name"
 
 
 def generate_console_urls_sizes_and_filenames(folder_path):
@@ -21,21 +23,30 @@ def generate_console_urls_sizes_and_filenames(folder_path):
     for blob in blobs:
         if not blob.name.endswith('/'):
             url = f"https://storage.cloud.google.com/{bucket_name}/{blob.name}?authuser=1"
-            size_in_KB = blob.size / 1024  # Convert bytes to KB (binary)
-            filename = blob.name.split('/')[-1]  # Extract filename from blob.name
+            size_in_KB = blob.size / 1024
+            filename = blob.name.split('/')[-1]
             url_size_name_list.append((url, size_in_KB, filename))
     return url_size_name_list
 
 
-def get_hr_folders():
+def get_bir_folders_with_batches():
+    """
+    Return list of (batch_name, bir_folder_name) tuples.
+    E.g., ('batch_1', 'BIR0001234')
+    """
     storage_client = storage.Client()
     blobs = storage_client.list_blobs(bucket_name, prefix=main_folder + "/")
-    hr_folders = set()
+    bir_folders = set()
+
     for blob in blobs:
-        path_parts = blob.name.split('/')
-        if len(path_parts) > 2 and path_parts[1].startswith("BIR"):
-            hr_folders.add(path_parts[1])
-    return sorted(hr_folders)
+        parts = blob.name.strip("/").split('/')
+        # Expect structure: main_folder/batch/BIRxxxx/.../file
+        if len(parts) >= 3 and parts[0] == main_folder and parts[2].startswith("BIR"):
+            batch = parts[1]
+            bir_folder = parts[2]
+            bir_folders.add((batch, bir_folder))
+
+    return sorted(bir_folders)
 
 
 def create_dataset_if_not_exists(bq_client, dataset_id):
@@ -65,7 +76,7 @@ def create_bigquery_table():
     bq_client = bigquery.Client(project=project_id)
     create_dataset_if_not_exists(bq_client, dataset_id)
 
-    schema_tickets = [
+    schema_pdfs = [
         bigquery.SchemaField("ticket_number", "STRING", mode="REQUIRED"),
         bigquery.SchemaField("pdfs", "STRING"),
         bigquery.SchemaField("size_in_KB", "FLOAT"),
@@ -78,41 +89,45 @@ def create_bigquery_table():
         bigquery.SchemaField("filename", "STRING"),
     ]
 
-    create_table_if_not_exists(bq_client, table_pdfs_id, schema_tickets)
+    create_table_if_not_exists(bq_client, table_pdfs_id, schema_pdfs)
     create_table_if_not_exists(bq_client, table_attachments_id, schema_attachments)
 
+    # Get all (batch, BIR) folders
+    bir_folders = get_bir_folders_with_batches()
+
+    # PDFs
     tickets_data = []
-    hr_numbers = get_hr_folders()
-    for hr in hr_numbers:
-        pdf_folder = f"{main_folder}/{hr}/PDFs/"
+    for batch, bir in bir_folders:
+        pdf_folder = f"{main_folder}/{batch}/{bir}/PDFs/"
         pdf_url_size_name = generate_console_urls_sizes_and_filenames(pdf_folder)
         if pdf_url_size_name:
             pdf_url, size_in_KB, filename = pdf_url_size_name[0]
         else:
             pdf_url, size_in_KB, filename = None, None, None
         tickets_data.append({
-            "ticket_number": hr,
+            "ticket_number": bir,
             "pdfs": pdf_url,
             "size_in_KB": size_in_KB,
             "filename": filename
         })
-    df_tickets = pd.DataFrame(tickets_data)
+    df_pdfs = pd.DataFrame(tickets_data)
 
     job = bq_client.load_table_from_dataframe(
-        df_tickets,
+        df_pdfs,
         bq_client.dataset(dataset_id).table(table_pdfs_id),
         job_config=bigquery.LoadJobConfig(write_disposition="WRITE_TRUNCATE"),
     )
     job.result()
-    print(f"Loaded {len(df_tickets)} rows into {table_pdfs_id}")
+    print(f"Loaded {len(df_pdfs)} rows into {table_pdfs_id}")
 
+    # Attachments
     attachments_data = []
-    for hr in hr_numbers:
-        attachments_folder = f"{main_folder}/{hr}/Attachments/"
+    for batch, bir in bir_folders:
+        attachments_folder = f"{main_folder}/{batch}/{bir}/Attachments/"
         attachment_url_size_name = generate_console_urls_sizes_and_filenames(attachments_folder)
         for attachment_url, size_in_KB, filename in attachment_url_size_name:
             attachments_data.append({
-                "ticket_number": hr,
+                "ticket_number": bir,
                 "attachments": attachment_url,
                 "size_in_KB": size_in_KB,
                 "filename": filename
