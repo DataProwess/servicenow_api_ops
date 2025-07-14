@@ -61,7 +61,7 @@ def fetch_batch(limit, offset):
         print(f"❌ API request failed at offset {offset}: {e}")
         raise SystemExit(1)
  
-def fetch_all_records(batch_size=1000, offset_increment=1001):
+def fetch_all_records(batch_size, offset_increment):
     start_time = time.time()
  
     offset = 0
@@ -70,7 +70,7 @@ def fetch_all_records(batch_size=1000, offset_increment=1001):
     all_results = []
  
     timestamp = datetime.datetime.now().strftime('%Y%m%d_%H%M%S')
-    master_folder = f"Treasury_tickets_JSON_responses_{timestamp}"
+    master_folder = f"PROD_Treasury_tickets_JSON_responses_{timestamp}"
     os.makedirs(master_folder, exist_ok=True)
  
     while True:
@@ -99,7 +99,7 @@ def fetch_all_records(batch_size=1000, offset_increment=1001):
         batch_num += 1
  
     # Save combined file
-    combined_filename = f"Treasury_records_combined_{timestamp}.json"
+    combined_filename = f"PROD_Treasury_records_combined_{timestamp}.json"
     combined_file = os.path.join(master_folder, combined_filename)
     with open(combined_file, "w", encoding="utf-8") as f:
         json.dump({"result": all_results}, f, indent=2)

@@ -61,7 +61,7 @@ def fetch_batch(limit, offset):
         print(f"❌ API request failed at offset {offset}: {e}")
         raise SystemExit(1)
  
-def fetch_all_records(batch_size=1000, offset_increment=1001):
+def fetch_all_records(batch_size, offset_increment):
     start_time = time.time()
  
     offset = 0

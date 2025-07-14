@@ -129,7 +129,7 @@ def process_tickets_from_file(master_folder, json_filepath):
     final_output = {"result": combined_results}
 
     # Save to combined JSON file
-    combined_file_path = os.path.join(master_folder, f"Combined_HR_state_change_data_{timestamp}.json")
+    combined_file_path = os.path.join(master_folder, f"PROD_Combined_HR_state_change_data_{timestamp}.json")
     os.makedirs(master_folder, exist_ok=True)
     with open(combined_file_path, 'w', encoding='utf-8') as f:
         json.dump(final_output, f, indent=4)
@@ -178,6 +178,6 @@ if __name__ == "__main__":
     }
 
     json_file_path = args.json_file
-    master_folder= f"HR_EMAIL_STATUS_JSON_responses_{timestamp}"
+    master_folder= f"PROD_HR_STATE_CHANGE_JSON_responses_{timestamp}"
     process_tickets_from_file(master_folder,json_file_path)
 
