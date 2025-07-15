@@ -72,4 +72,6 @@ def upload_directory_to_gcs(bucket_name, source_directory):
     print(f"📊 Total size uploaded: {total_uploaded_bytes / (1024**3):.2f} GB")
 
 # Run main upload
-upload_directory_to_gcs("treasury_tickets_demo", r"D:\coding\servicenow_api_ops\anish_demo_treasury_upload")
+bucket_name="treasury_tickets_demo"
+folder_to_be_uploaded = r"D:\coding\servicenow_api_ops\anish_demo_treasury_upload"
+upload_directory_to_gcs(bucket_name, folder_to_be_uploaded)
