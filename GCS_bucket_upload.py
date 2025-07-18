@@ -8,22 +8,21 @@ import logging
 import datetime
 
 # Setup credentials
-os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = "cdhnonprodtreasury87796-fd10b79fc8d5.json" #"cdhnonprodpnc44829-1296a3a1e57c.json"
+os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = "cdhprodpnc56670-e71873283e72.json"
 
 timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
-# Setup logging
-logging.basicConfig(filename=f'upload_failures_{timestamp}.log', level=logging.ERROR, filemode='w')  
 
 MAX_WORKERS = 16
 CHUNK_SIZE_MB = 10
 RETRIES = 3
 
-# Track total size
+# Track total size and counts
 total_uploaded_bytes = 0
 total_files_uploaded = 0
+log_initialized = False  # Only enable logging if there's a failure
 
 def safe_upload(bucket, base_path, folder_name, file_path):
-    global total_uploaded_bytes, total_files_uploaded
+    global total_uploaded_bytes, total_files_uploaded, log_initialized
     blob_path = f"{folder_name}/{file_path.relative_to(base_path).as_posix()}"
     blob = bucket.blob(blob_path)
     blob.chunk_size = CHUNK_SIZE_MB * 1024 * 1024
@@ -39,6 +38,15 @@ def safe_upload(bucket, base_path, folder_name, file_path):
         except GoogleAPIError as e:
             print(f"❌ Attempt {attempt} failed for {file_path}: {e}")
             time.sleep(2 ** attempt)
+
+    # Initialize logging only once if any upload fails
+    if not log_initialized:
+        logging.basicConfig(
+            filename=f'upload_failures_{timestamp}.log',
+            level=logging.ERROR,
+            filemode='w'
+        )
+        log_initialized = True
 
     logging.error(str(file_path))  # Log failed file path only
     print(f"🚨 Giving up on {file_path}")
@@ -72,6 +80,6 @@ def upload_directory_to_gcs(bucket_name, source_directory):
     print(f"📊 Total size uploaded: {total_uploaded_bytes / (1024**3):.2f} GB")
 
 # Run main upload
-bucket_name="treasury_tickets_demo"
-folder_to_be_uploaded = r"D:\coding\servicenow_api_ops\anish_demo_treasury_upload"
+bucket_name = "hr_bucket_prod"
+folder_to_be_uploaded = r"D:\coding\servicenow_api_ops\anish_demo_hr_upload"
 upload_directory_to_gcs(bucket_name, folder_to_be_uploaded)
