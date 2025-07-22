@@ -3,17 +3,17 @@ import pandas as pd
 import os
 
 # Set credentials
-os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = "cdhnonprodtreasury87796-fd10b79fc8d5.json"
+os.environ["GOOGLE_APPLICATION_CREDENTIALS"] ="cdhprodtreasury17105-SAKey-serviceNow_migration-e4f1e76fd635.json" # "cdhnonprodtreasury87796-fd10b79fc8d5.json"
 
 # Configuration
-bucket_name = "treasury_tickets_demo"
-main_folder = "anish_demo_treasury_upload"
-project_id = "cdhnonprodtreasury87796"
+bucket_name = "treasury_bucket_prod"
+main_folder = "Treasury_Tickets_attachments_and_pdfs_Treasury_tickets_JSON_responses_20250703_125727"
+project_id = "cdhprodtreasury17105"
 dataset_id = "treasury_tickets_dataset"
 
 # Table names
-table_pdfs_id = "anish_demo_Treasury_PDFs_with_size_and_name"
-table_attachments_id = "anish_demo_Treasury_Attachments_with_size_and_name"
+table_pdfs_id = "PROD_Treasury_PDFs_with_size_and_name"
+table_attachments_id = "PROD_Treasury_Attachments_with_size_and_name"
 
 
 def generate_console_urls_sizes_and_filenames(folder_path):

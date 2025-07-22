@@ -5,14 +5,14 @@ import math
 from datetime import datetime
 
 # Set GCP credentials
-os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = "cdhnonprodtreasury87796-fd10b79fc8d5.json"
+os.environ["GOOGLE_APPLICATION_CREDENTIALS"] ="cdhprodtreasury17105-SAKey-serviceNow_migration-e4f1e76fd635.json" # "cdhnonprodtreasury87796-fd10b79fc8d5.json"
 
 # GCP configuration
-bucket_name = "treasury_tickets_demo"
-main_folder = "BI_Treasury_Tickets_pdfs_BI_treasury_records_combined_20250703_174922_20250707_074243"
-project_id = "cdhnonprodtreasury87796"
+bucket_name = "treasury_bucket_prod"
+main_folder = "PROD_BI_Treasury_Tickets_pdfs_BI_treasury_records_combined_20250703_174922_20250707_074243"
+project_id = "cdhprodtreasury17105"
 dataset_id = "treasury_tickets_dataset"
-table_pdfs_id = "BI_Treasury_PDFs_with_size_and_name"
+table_pdfs_id = "PROD_BI_Treasury_PDFs_with_size_and_name"
 
 
 # Generate URL, size in KB, and filename from GCS folder

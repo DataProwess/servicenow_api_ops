@@ -3,15 +3,15 @@ import pandas as pd
 import os
 
 # Set credentials
-os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = "cdhnonprodpnc44829-1296a3a1e57c.json"
+os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = "cdhprodpnc56670-e71873283e72.json"
 
 # Configuration
-bucket_name = "demo_hr_bucket"
-main_folder = "anish_demo_hr_upload"
-project_id = "cdhnonprodpnc44829"
+bucket_name = "hr_bucket_prod"
+main_folder = "HR_Tickets_attachments_and_pdfs_HR_tickets_JSON_response_20250703_130309"
+project_id = "cdhprodpnc56670"
 dataset_id = "hr_tickets_dataset"
-table_pdfs_id = "anish_hr_PDFs_with_size_and_name"
-table_attachments_id = "anish_hr_Attachments_with_size_and_name"
+table_pdfs_id = "PROD_hr_PDFs_with_size_and_name"
+table_attachments_id = "PROD_hr_Attachments_with_size_and_name"
 
 
 def generate_console_urls_sizes_and_filenames(folder_path):
